@@ -12,6 +12,9 @@ class Connector(object):
             raise Exception
         print self.conn.request("GET", path)
         res = self.conn.getresponse()
+        self.headers = res.getheaders()
+        self.body = res.read()
+        print self.headers
         return res.status
 
     def getImage(self, imgPath):
@@ -24,13 +27,17 @@ class Connector(object):
         self.img = res.read()
         self.tmp_file = "tmp_"+int(time.time()).__str__()+".jpeg"
 
-    def resolveImg(self)
+    def resolveImg(self):
         with open(self.tmp_file, "w") as oFd:
             oFd.write(self.img)
-        #resolve
+        self.imgCode = os.popen("tesseract -l eng {} stdout".format(self.tmp_file)).readline()
         os.remove(self.tmp_file)
         self.tmp_file = None
         self.img = None
+
+    def postForm(self):
+        pass
+
 
 if __name__ == '__main__':
     einvoice_domain = 'www.einvoice.nat.gov.tw'
@@ -38,6 +45,7 @@ if __name__ == '__main__':
     imgPath = '/APMEMBERVAN/PublicAudit/PublicAudit!generateImageCode'
 
     c = Connector(einvoice_domain)
-    #if c.connect(publicAudit) is 200:
-    c.getImage(imgPath)
+    c.connect(publicAudit)
+    #c.getImage(imgPath)
+    #c.resolveImg()
 
