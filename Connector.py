@@ -1,13 +1,12 @@
 #!/usr/local/bin/python
 import httplib, urllib
 import os
-import time
-import re
 import logging as log
-from htmldom import htmldom
+import time
+import sys
 
 class Connector(object):
-    def __init__(self, domain=None):
+    def __init__(self, domain="www.einvoice.nat.gov.tw"):
         self.domain = domain
         self.cookie_str = ""
         self.headers = {}
@@ -16,6 +15,9 @@ class Connector(object):
         self.guess_hit = 0
         self.imgCode = ""
         self.tmp_file = ""
+        self.publicAudit = '/APMEMBERVAN/PublicAudit/PublicAudit'
+        self.postPath = '/APMEMBERVAN/PublicAudit/PublicAudit!queryInvoiceByCon'
+        self.imgPath = '/APMEMBERVAN/PublicAudit/PublicAudit!generateImageCode'
 
     def setReqHeader(self):
         self.headers['User-Agent'] ="Mozilla/5.0 (Macintosh; Intel Mac OS X 10.11; rv:38.0) Gecko/20100101 Firefox/38.0"
@@ -28,13 +30,6 @@ class Connector(object):
         self.headers['Cookie']=self.cookie_str
         self.headers['Content-Type']="application/x-www-form-urlencoded"
         self.headers['Origin']="https://www.einvoice.nat.gov.tw"
-
-    #def setCookie(self, cookie_str):
-    #    cookies = re.split('[;,]', cookie_str)
-    #    for pair in cookies:
-    #        key = pair.split("=")[0]
-    #        self.cookie[key] = pair
-    #        print "{}:{}".format(key, self.cookie[key])
 
     def clearCookie(self):
         self.cookie = {}
@@ -72,22 +67,25 @@ class Connector(object):
         # retry
         while len(self.imgCode) is not 5:
             self.guess_total += 1
-            if os.path.isfile(self.tmp_file):
+            try:
                 os.remove(self.tmp_file)
+            except:
+                pass
 
-            self.getPath(imgPath)
+            self.getPath(self.imgPath)
+
+            # keep the data
             self.tmp_file = "tmp_"+int(time.time()).__str__()+".jpeg"
-
             with open(self.tmp_file, "w") as oFd:
                 oFd.write(self.body)
 
-            self.imgCode = os.popen("tesseract -l eng {} stdout 2>/dev/null".format(self.tmp_file)).readline()[0:-1]
-            log.info("NOT Right:{}/{}={}".format(self.guess_hit, self.guess_total, (self.guess_hit/(self.guess_total*1.0))))
+            self.imgCode = os.popen("tesseract -l eng {} stdout 2>/dev/null"\
+                    .format(self.tmp_file)).readline()[0:-1]
+            log.info("Guess Ratio:{}/{}={}%".format(self.guess_hit+1, self.guess_total, \
+                    ((self.guess_hit+1)*100/(self.guess_total))))
 
         self.guess_hit += 1
-        os.rename(self.tmp_file , self.imgCode+".jpeg")
-        #os.remove(self.tmp_file)
-        #self.tmp_file = None
+        os.remove(self.tmp_file)
 
     def postForm(self, path, num, date ):
         self.postData['publicAuditVO.invoiceNumber'] = num
@@ -110,47 +108,29 @@ class Connector(object):
                 break
         self.body = self.res.read()
 
-    def extractInfo(self):
-        #print self.body
-        #if self.body.find("lpTb"):
-        #    log.info("Good")
-
-        with open("out.html", "w") as oFd:
-            oFd.write(self.body)
-
-        dom = htmldom.HtmlDom().createDom(self.body)
-        items = dom.find( "table[class=lpTb] > tr > td" )
-        #print "RES:"+items.text()
-
-        #result = {}
-        #result['id'] = items.first().text()
-        #result['date'] = items.next.text()
-        #result['time'] = None
-        #result['title'] = items.next.text()
-        #result['status'] = items.next.text()
-        #result['money'] = items.next.text()
-        #result['taxID'] = items.next.text()
-        #result['addr'] = items.next.text()
-        pass
 
 if __name__ == '__main__':
-    einvoice_domain = 'www.einvoice.nat.gov.tw'
-    publicAudit = '/APMEMBERVAN/PublicAudit/PublicAudit'
-    postPath = '/APMEMBERVAN/PublicAudit/PublicAudit!queryInvoiceByCon'
-    imgPath = '/APMEMBERVAN/PublicAudit/PublicAudit!generateImageCode'
-
+    """ give a guess for id & date"""
     log.basicConfig(level=log.INFO)
 
-    c = Connector(einvoice_domain)
-    log.info('Connect to {}'.format(einvoice_domain))
+    if len(sys.argv) != 3:
+        print("Usage: python Connector.py [ID] [DATE]")
+        log.error("Unknown input")
+        sys.exit(1)
 
-    c.getPath(publicAudit)
-    log.info('[{}]Get normal page {}'.format(c.res.reason, publicAudit))
+    rec_id = sys.argv[1]
+    rec_date = sys.argv[2]
+
+    c = Connector()
+    log.info('Connect to {}'.format(c.domain))
+
+    c.getPath(c.publicAudit)
+    log.info('[{}]Get normal page & set cookie'.format(c.res.reason))
 
     c.resolveImg()
     log.info('[{}]Get Image {}:{}'.format(c.res.reason, c.tmp_file, c.imgCode))
 
-    c.postForm( postPath, "GL07294895", "105/04/09")
-    log.info('[{}]Post data {}'.format(c.res.reason,postPath))
+    c.postForm( c.postPath, rec_id, rec_date)
+    log.info('[{}]Post data'.format(c.res.reason))
 
-    c.extractInfo()
+    print(c.body)
