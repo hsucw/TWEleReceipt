@@ -25,26 +25,28 @@ class Connector(object):
         self.imgRslr.loadPics()
         self.htmlRslr = hdrslr()
         self.cookie = Cookie.SimpleCookie()
+        self.cookie_str = ""
 
         self.publicAudit = '/APMEMBERVAN/PublicAudit/PublicAudit'
         self.postPath = '/APMEMBERVAN/PublicAudit/PublicAudit!queryInvoiceByCon'
         self.imgPath = '/APMEMBERVAN/PublicAudit/PublicAudit!generateImageCode'
 
     def setReqHeader(self):
+        self.headers['Host']="www.einvoice.nat.gov.tw"
         self.headers['User-Agent'] ="Mozilla/5.0 (Macintosh; Intel Mac OS X 10.11; rv:38.0) Gecko/20100101 Firefox/38.0"
         self.headers['Accept'] ="text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
-        self.headers['Host']="www.einvoice.nat.gov.tw"
         self.headers['Accept-Language']="zh-TW,zh;q=0.8,en-US;q=0.5,en;q=0.3"
         self.headers['Accept-Encoding']="gzip, deflate"
-        self.headers['Referer']="https://www.einvoice.nat.gov.tw/APMEMBERVAN/PublicAudit/PublicAudit!queryInvoiceByCon"
+        #self.headers['Referer']="https://www.einvoice.nat.gov.tw/APMEMBERVAN/PublicAudit/PublicAudit!queryInvoiceByCon"
+        self.headers['Referer']="https://www.einvoice.nat.gov.tw/APMEMBERVAN/PublicAudit/PublicAudit"
         self.headers['Connection']="keep-alive"
         self.headers['Content-Type']="application/x-www-form-urlencoded"
-        self.headers['Origin']="https://www.einvoice.nat.gov.tw"
-        cookies_str = ""
-        for cookie in self.cookie.output(header=""):
-            cookies_str += cookie
-        self.headers['Cookie'] = cookies_str
-
+        #self.headers['Origin']="https://www.einvoice.nat.gov.tw"
+        #cookies_str = ""
+        #for cookie in self.cookie.output(header=""):
+        #    cookies_str += cookie
+        #self.headers['Cookie'] = cookies_str
+        self.headers['Cookie'] = self.cookie_str
 
     def parseCookie(self, cookie_str):
         pairs = re.split("[;,]", cookie_str)
@@ -78,6 +80,7 @@ class Connector(object):
             raise Exception
 
         self.setReqHeader()
+        log.debug("GET:{} with {}".format( path,self.headers))
         self.conn.request("GET", path, headers=self.headers)
         while True:
             try:
@@ -90,6 +93,7 @@ class Connector(object):
 
         for header in self.res.getheaders():
             if header[0] == 'set-cookie':
+                self.cookie_str = header[1]
                 self.cookie.load( header[1])
                 #self.parseCookie( header[1])
                 #self.genCookieStr()
@@ -167,9 +171,10 @@ if __name__ == '__main__':
     with open("out.html" , "w") as outFd:
         outFd.write(c.body)
 
-    if c.getInfo():
-        for k,r in c.info.iteritems():
-            print k+":"+r
-    else:
-        log.error("NO DATA ERROR")
+    c.getInfo()
+    #if c.getInfo():
+    #    for k,r in c.info.iteritems():
+    #        print k+":"+r
+    #else:
+    #    log.error("NO DATA ERROR")
 

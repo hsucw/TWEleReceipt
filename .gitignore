@@ -2,3 +2,5 @@
 *.jpeg
 *.html
 pic/
+.DS_Store
+*.pyc
