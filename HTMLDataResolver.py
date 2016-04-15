@@ -37,7 +37,7 @@ class HTMLDataResolver(object):
         """find the sequence of data"""
         text = {}
         for i in range(0,items.length()):
-            if re.match("^[a-zA-Z]{2}\d{8}", items[i].text()) is not None:
+            if re.match("^[a-zA-Z]{2}\d{8}$", items[i].text()) is not None:
                 j = 0
                 for col in colNames:
                     try:
@@ -49,25 +49,29 @@ class HTMLDataResolver(object):
                     j += 1
                 return text
                 break
-        log.warn("not found the number")
+        log.warn("Not found the number in {}".format(items.text()))
         raise NotFoundResult
 
     def resolve(self, content):
         """resolve the html dom"""
         dom = htmldom.HtmlDom().createDom(content)
-        items = dom.find("table[class=lpTb] > tr > td")
+
+        items = dom.find("table[class=lpTb] tr td")
+
+        if items.length is 0:
+            return {}
 
         try:
             data = self.findtheData(items)
         except NotFoundResult:
-            log.warn("No Data")
-            data = None
+            data = {}
 
         return data
 
 
 if __name__ == "__main__":
     """give a .html retrived from the www.einvoice.nat.gov.tw"""
+    log.basicConfig(level=log.INFO)
     if sys.argv[1] is not None:
         infile = sys.argv[1]
 
