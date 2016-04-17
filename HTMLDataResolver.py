@@ -9,15 +9,14 @@ from htmldom import htmldom
 
 colNames =['id','date','com','stat','money','taxid','addr','note']
 
+no_data_rec_str = '\xe6\x9f\xa5\xe7\x84\xa1\xe7\x99\xbc\xe7\xa5\xa8\xe9\x96\x8b\xe7\xab\x8b\xe8\xb3\x87\xe6\x96\x99'
+
 class NoRecord(Exception):
-    log.warn("no record")
     pass
 class NotCorrectFormat(Exception):
-    log.warn("not correct format")
     pass
 class NotFoundResult(Exception):
     """not found the result"""
-    log.warn("not found result")
     pass
 
 class HTMLDataResolver(object):
@@ -49,18 +48,16 @@ class HTMLDataResolver(object):
                 for col in colNames:
                     try:
                         field = self.parseUTF8(items[i+j].text())
-                        #print items[i+j].html()
-                        #if field is "":
-                        #    raise NoRecord
                     except Exception as e:
-                        log.warn(e)
-                        raise NotCorrectFormat
-                        break
+                        if text['com'] == no_data_rec_str:
+                            log.warn("Record not found")
+                            raise NoRecord
+                        else:
+                            raise NotCorrectFormat
                     text[col]=field
                     j += 1
                 return text
-                break
-        log.warn("Not found the number in {}".format(items.text()))
+        log.warn("Not found the number in [{}]".format(items.text()))
         raise NotFoundResult
 
     def resolve(self, content):
@@ -68,7 +65,6 @@ class HTMLDataResolver(object):
         dom = htmldom.HtmlDom().createDom(content)
 
         items = dom.find("table[class=lpTb] tr td")
-
         if items.length is 0:
             return {}
 
@@ -85,7 +81,7 @@ class HTMLDataResolver(object):
 
 if __name__ == "__main__":
     """give a .html retrived from the www.einvoice.nat.gov.tw"""
-    log.basicConfig(level=log.INFO)
+    log.basicConfig(level=log.DEBUG)
     if sys.argv[1] is not None:
         infile = sys.argv[1]
 
@@ -93,6 +89,11 @@ if __name__ == "__main__":
         content = inFd.read()
     resolver = HTMLDataResolver()
     res = resolver.resolve(content)
-    for k,r in res.iteritems():
-        print k+":"+r
+    if res is not None:
+        if not bool(res):
+            print "No Record"
+        for k,r in res.iteritems():
+            print k+":"+r
+    else:
+        print "NO DATA"
     #pass

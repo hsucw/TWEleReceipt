@@ -58,7 +58,7 @@ class ImgResolver(object):
                 code = os.path.basename(f).split('.')[0]
 
                 # if unsolved pics have been updated manually
-                if not self.check(code):
+                if self.check(code):
                     t_p = os.path.join(self.s_path, code+".jpeg")
                     os.rename(os.path.join(dir_p,f), t_p)
                 else:
@@ -74,14 +74,19 @@ class ImgResolver(object):
         else:
             return None
 
-    def reportFail(self, imgSHA):
-        tmp_file = os.path.join(self.s_path, self.mem[imgSHA]+".jpeg")
+    def reportFail(self, imgCode, imgSHA):
+
+        tmp_file = os.path.join(self.s_path, imgCode+".jpeg")
         t_p = os.path.join(self.uns_path, imgSHA+".jpeg")
         try:
             os.rename(tmp_file, t_p)
         except:
-            log.error("Rename file error: {} to {}", tmp_file, t_p)
-        self.mem[imgSHA]=""
+            log.error("Rename file error")
+        try:
+            self.mem[imgSHA]=""
+        except KeyError:
+            log.error("No such key {} in imgCode mem".format(imgSHA))
+        log.info("Report Fail:{}".format(imgCode))
 
     def learn(self, imgSHA, imgCode, correct):
         if self.tmp_file is "":
@@ -149,7 +154,7 @@ class ImgResolver(object):
             res = True
 
         self.learn(imgSHA,imgCode,res)
-        return imgCode
+        return imgCode, imgSHA
 
 if __name__ == "__main__":
     log.basicConfig(level=log.INFO)

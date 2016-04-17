@@ -19,12 +19,12 @@ class Connector(object):
         self.guess_hit = 0
 
         self.imgCode = ""
+        self.imgSHA = ""
         self.tmp_file = ""
 
         self.imgRslr = imgrslr()
         self.imgRslr.loadPics()
         self.htmlRslr = hdrslr()
-        self.cookie = Cookie.SimpleCookie()
         self.cookie_str = ""
 
         self.publicAudit = '/APMEMBERVAN/PublicAudit/PublicAudit'
@@ -41,35 +41,7 @@ class Connector(object):
         self.headers['Referer']="https://www.einvoice.nat.gov.tw/APMEMBERVAN/PublicAudit/PublicAudit"
         self.headers['Connection']="keep-alive"
         self.headers['Content-Type']="application/x-www-form-urlencoded"
-        #self.headers['Origin']="https://www.einvoice.nat.gov.tw"
-        #cookies_str = ""
-        #for cookie in self.cookie.output(header=""):
-        #    cookies_str += cookie
-        #self.headers['Cookie'] = cookies_str
         self.headers['Cookie'] = self.cookie_str
-
-    def parseCookie(self, cookie_str):
-        pairs = re.split("[;,]", cookie_str)
-        for p in pairs:
-            l = p.split("=")
-            if len(l) is 2:
-                value = l[1]
-            else:
-                value = True
-            key = l[0]
-            self.cookie[key]=value
-
-    def genCookieStr(self):
-        res = ""
-        for k,v in self.cookie.iteritems():
-            if v is True:
-                res+="{}; ".format(k)
-            else:
-                res+="{}={}; ".format(k,v)
-        self.cookie_str = res
-
-    def clearCookie(self):
-        self.cookie = {}
 
     def setPostData(self, data):
         self.postData = data
@@ -94,9 +66,6 @@ class Connector(object):
         for header in self.res.getheaders():
             if header[0] == 'set-cookie':
                 self.cookie_str = header[1]
-                self.cookie.load( header[1])
-                #self.parseCookie( header[1])
-                #self.genCookieStr()
                 log.debug("Set-cookie:{}".format(header[1]))
                 break
 
@@ -109,7 +78,7 @@ class Connector(object):
 
         while self.imgCode is "":
             self.getPath(self.imgPath)
-            self.imgCode = self.imgRslr.resolveImg(self.body)
+            self.imgCode, self.imgSHA = self.imgRslr.resolveImg(self.body)
         return self.imgCode
 
     def setPostData(self, num, date):
@@ -145,7 +114,7 @@ class Connector(object):
 
 if __name__ == '__main__':
     """ give a guess for id & date"""
-    log.basicConfig(level=log.DEBUG)
+    log.basicConfig(level=log.INFO)
 
     if len(sys.argv) != 3:
         print("Usage: python Connector.py [ID] [DATE]")
@@ -156,27 +125,23 @@ if __name__ == '__main__':
     rec_date = sys.argv[2]
 
     c = Connector()
-    log.info('Connect to {}'.format(c.domain))
+    #log.info('Connect to {}'.format(c.domain))
 
-    c.getPath(c.publicAudit)
-    log.info('[{}]Get normal page & set cookie'.format(c.res.reason))
+    res = None
+    while res is None:
+        c.imgRslr.reportFail(c.imgCode, c.imgSHA)
+        c.resolveImg()
+        log.info('[{}]Get Image {}:{}'.format(c.res.reason, c.tmp_file, c.imgCode))
+        c.setPostData( rec_id, rec_date )
+        c.postForm( c.postPath )
+        log.info('[{} {}]Post data'.format(c.res.status,c.res.reason))
+        res = c.getInfo()
 
-    c.resolveImg()
-    log.info('[{}]Get Image {}:{}'.format(c.res.reason, c.tmp_file, c.imgCode))
+        with open("out.html" , "w") as outFd:
+            outFd.write(c.body)
 
-    c.setPostData( rec_id, rec_date )
-    c.postForm( c.postPath )
-    log.info('[{} {}]Post data'.format(c.res.status,c.res.reason))
-
-    with open("out.html" , "w") as outFd:
-        outFd.write(c.body)
-
-    res = c.getInfo()
-    if res is not None:
-        if len(c) is 0:
-            print "No Record"
-        for k,r in c.info.iteritems():
-            print k+":"+r
-    else:
-        log.error("NO DATA ERROR")
+    if not bool(c.info):
+        print "No Record"
+    for k,r in c.info.iteritems():
+        print k+":"+r
 
