@@ -9,8 +9,15 @@ from htmldom import htmldom
 
 colNames =['id','date','com','stat','money','taxid','addr','note']
 
+class NoRecord(Exception):
+    log.warn("no record")
+    pass
+class NotCorrectFormat(Exception):
+    log.warn("not correct format")
+    pass
 class NotFoundResult(Exception):
     """not found the result"""
+    log.warn("not found result")
     pass
 
 class HTMLDataResolver(object):
@@ -41,11 +48,15 @@ class HTMLDataResolver(object):
                 j = 0
                 for col in colNames:
                     try:
-                        filed = self.parseUTF8(items[i+j].text())
+                        field = self.parseUTF8(items[i+j].text())
+                        #print items[i+j].html()
+                        #if field is "":
+                        #    raise NoRecord
                     except Exception as e:
                         log.warn(e)
-                        raise NotFoundResult
-                    text[col]=filed
+                        raise NotCorrectFormat
+                        break
+                    text[col]=field
                     j += 1
                 return text
                 break
@@ -64,8 +75,11 @@ class HTMLDataResolver(object):
         try:
             data = self.findtheData(items)
         except NotFoundResult:
+            data = None
+        except NoRecord:
             data = {}
-
+        except NotCorrectFormat:
+            data = None
         return data
 
 

@@ -171,10 +171,12 @@ if __name__ == '__main__':
     with open("out.html" , "w") as outFd:
         outFd.write(c.body)
 
-    c.getInfo()
-    #if c.getInfo():
-    #    for k,r in c.info.iteritems():
-    #        print k+":"+r
-    #else:
-    #    log.error("NO DATA ERROR")
+    res = c.getInfo()
+    if res is not None:
+        if len(c) is 0:
+            print "No Record"
+        for k,r in c.info.iteritems():
+            print k+":"+r
+    else:
+        log.error("NO DATA ERROR")
 
