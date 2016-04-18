@@ -5,7 +5,7 @@ import ssl
 
 def checkAlive(func):
     def check_alive(*args, **kargs):
-        #check somthing
+        # [TO-DO] check somthing
         res = func(*args, **kargs)
         return res
     return check_alive

@@ -139,7 +139,6 @@ class ImgResolver(object):
 
         for alg in self.algo:
             if self.check(imgCode):
-                print "out"
                 break
             log.info("Use '{}' solver".format(alg))
             self.guess_total +=1
