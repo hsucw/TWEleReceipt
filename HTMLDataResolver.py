@@ -7,16 +7,20 @@ import logging as log
 import sys
 from htmldom import htmldom
 
+# DB Column names
 colNames =['id','date','com','stat','money','taxid','addr','note']
 
+# A Chinese string for "Record Not Found"
 no_data_rec_str = '\xe6\x9f\xa5\xe7\x84\xa1\xe7\x99\xbc\xe7\xa5\xa8\xe9\x96\x8b\xe7\xab\x8b\xe8\xb3\x87\xe6\x96\x99'
 
 class NoRecord(Exception):
+    """ Query Success, but no Data """
     pass
 class NotCorrectFormat(Exception):
+    """ Query Failure, unexpected format """
     pass
 class NotFoundResult(Exception):
-    """not found the result"""
+    """ Query Failure, captcha error, cookie incomplete"""
     pass
 
 class HTMLDataResolver(object):
@@ -25,7 +29,7 @@ class HTMLDataResolver(object):
         pass
 
     def parseUTF8(self,instr):
-        """transform the text"""
+        """ transform the text """
         outstr = ""
         if instr.find("&#") < 0:
             return instr.strip()
@@ -40,7 +44,7 @@ class HTMLDataResolver(object):
         return outstr
 
     def findtheData(self,items):
-        """find the sequence of data"""
+        """ find the sequence of data """
         text = {}
         for i in range(0,items.length()):
             if re.match("^[a-zA-Z]{2}\d{8}$", items[i].text()) is not None:
@@ -80,7 +84,7 @@ class HTMLDataResolver(object):
 
 
 if __name__ == "__main__":
-    """give a .html retrived from the www.einvoice.nat.gov.tw"""
+    """give a .html retrived from the www.einvoice.nat.gov.tw """
     log.basicConfig(level=log.DEBUG)
     if sys.argv[1] is not None:
         infile = sys.argv[1]
