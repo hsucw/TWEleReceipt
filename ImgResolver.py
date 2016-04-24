@@ -45,7 +45,7 @@ class ImgResolver(object):
                 code = os.path.basename(f).split('.')[0]
                 if self.check(code):
                     self.mem[imgSHA] = code
-                    log.info("Load Solved: {}={}".format(imgSHA, code))
+                    log.debug("Load Solved: {}={}".format(imgSHA, code))
                 else:
                     os.remove(f_p)
                     log.warn("Remove incorrect file: {}".format(f_p))
@@ -64,7 +64,7 @@ class ImgResolver(object):
                 else:
                     code = ""
                 self.mem[imgSHA] = code
-                log.info("Load Unsolved: {}={}".format(imgSHA, code))
+                log.debug("Load Unsolved: {}={}".format(imgSHA, code))
 
     def getCode(self, imgSHA):
         """ if exist, return the code; if fail, return \"\"; if not exist, return None"""
@@ -76,17 +76,21 @@ class ImgResolver(object):
 
     def reportFail(self, imgCode, imgSHA):
 
+        if imgCode == "":
+            return
+
         tmp_file = os.path.join(self.s_path, imgCode+".jpeg")
         t_p = os.path.join(self.uns_path, imgSHA+".jpeg")
+        self.guess_hit -= 1
         try:
             os.rename(tmp_file, t_p)
         except:
-            log.error("Rename file error")
+            log.error("Rename file error: {} -> {}".format(tmp_file, t_p))
         try:
             self.mem[imgSHA]=""
         except KeyError:
             log.error("No such key {} in imgCode mem".format(imgSHA))
-        log.info("Report Fail:{}".format(imgCode))
+        log.debug("Report Fail:{}".format(imgCode))
 
     def learn(self, imgSHA, imgCode, correct):
         if self.tmp_file is "":
@@ -96,7 +100,7 @@ class ImgResolver(object):
             t_p = os.path.join(self.s_path, imgCode+".jpeg")
         else:
             t_p = os.path.join(self.uns_path, imgSHA+".jpeg")
-        log.info("copy file to {}".format(t_p))
+        log.debug("copy file to {}".format(t_p))
         try:
             os.rename(self.tmp_file, t_p)
         except Exception as details:
@@ -140,7 +144,7 @@ class ImgResolver(object):
         for alg in self.algo:
             if self.check(imgCode):
                 break
-            log.info("Use '{}' solver".format(alg))
+            log.debug("Use '{}' solver".format(alg))
             self.guess_total +=1
             imgCode= getattr(self,alg)(img)
 

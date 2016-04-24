@@ -142,6 +142,7 @@ if __name__ == '__main__':
 
     if not bool(c.info):
         print "No Record"
+    print("===[Query Result]===")
     for k,r in c.info.iteritems():
-        print k+":"+r
+        print k+":\t\t"+r
 

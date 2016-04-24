@@ -61,7 +61,7 @@ class HTMLDataResolver(object):
                     text[col]=field
                     j += 1
                 return text
-        log.warn("Not found the number in [{}]".format(items.text()))
+        log.warn("Not found the number in response HTML")
         raise NotFoundResult
 
     def resolve(self, content):
