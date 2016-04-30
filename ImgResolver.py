@@ -6,6 +6,7 @@ import sys
 import hashlib as hash
 import errno
 import re
+from PIL import Image, ImageEnhance
 
 class ImgResolver(object):
 
@@ -115,10 +116,27 @@ class ImgResolver(object):
         self.tmp_file = "tmp_"+int(time.time()).__str__()+".jpeg"
         with open(self.tmp_file, "w") as oFd:
             oFd.write(img)
+        
+        # resolve noise
+        im = Image.open(self.tmp_file)
+        enhancer = ImageEnhance.Color(im)
+        im = enhancer.enhance(0.0)
+        enhancer = ImageEnhance.Contrast(im)
+        im = enhancer.enhance(3.0)
+        enhancer = ImageEnhance.Brightness(im)
+        im = enhancer.enhance(10.0)
+        enhancer = ImageEnhance.Contrast(im)
+        im = enhancer.enhance(20.0)
+        enhancer = ImageEnhance.Sharpness(im)
+        im = enhancer.enhance(0.0)
+        im.save(self.tmp_file)
 
         # use tesseract
-        imgCode = os.popen("tesseract -l eng {} stdout 2>/dev/null"\
-                .format(self.tmp_file)).readline()[0:-1]
+        os.popen("tesseract -l eng {} stdout 2>/dev/null"\
+                .format(self.tmp_file))
+        f = open('stdout.txt','r')
+        imgCode = f.readline().replace('\n','')
+        
         log.info("Guess Ratio:{}/{}={}%".format(self.guess_hit+1, self.guess_total, \
                 ((self.guess_hit+1)*100/(self.guess_total))))
         return imgCode
