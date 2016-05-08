@@ -173,6 +173,7 @@ class Crawler(object):
         self.mm = int(self.rec_date[4:6])
         self.dd = int(self.rec_date[7:9])
         cont = 0
+        cont2 = 0
         if bool(self.Prev):
             self.id_num -= 1
         while True:
@@ -181,17 +182,34 @@ class Crawler(object):
                 if bool(self.Prev): 
                     self.id_num -= 1
                     cont = 0
+                    cont2 =0
                 else:
                     self.id_num += 1
                     cont = 0
-            elif  (success is False) and (cont==0):
+                    cont2 = 0
+            elif (success is False)  and (cont2 < 3):
+                if bool(self.Prev): 
+                    self.id_num -= 1
+                    cont2 += 1
+                else:
+                    self.id_num += 1
+                    cont2 += 1
+            elif  (success is False) and (cont==0) and (cont2 >= 3):
                 if bool(self.Prev):
                     self.PrevDate()
+                    self.id_num += cont2
+                    cont2 = 0 
                 else:
                     self.NextDate()
+                    self.id_num -= cont2
+                    cont2 = 0
                 cont+=1
-            else :
-            	   break
+            elif (success is False) and (cont!=0) and (cont2 >= 3) :
+                break
+            else:
+                log.error('main loop unusually break')
+                sys.exit(1)
+
 
 
 
