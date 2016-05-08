@@ -7,12 +7,13 @@ import re
 import thread
 
 class Crawler(object):
-    def __init__(self):
+    def __init__(self, Prev):
         self.tasks = []
         self.conn = Connector()
         self.dbmgr = DBManager()
         self.c = Connector()
-
+        self.Prev = Prev
+        self.data = ""
     def getTasks(self, task):
         """ getTasks """
         pass
@@ -52,10 +53,13 @@ class Crawler(object):
                 res_money = r
             if k == 'date':
                 res_date = r
-        with open('data.txt' , 'a') as outFd:
-            outFd.write(res_id + '\t\t')
-            outFd.write(res_date + '\t\t')
-            outFd.write(res_money + '\n')
+        if not bool(self.Prev):
+            with open('data.txt' , 'a') as outFd:
+                outFd.write(res_id + '\t\t')
+                outFd.write(res_date + '\t\t')
+                outFd.write(res_money + '\n')
+        else:
+            self.data = (res_id + '\t\t') + (res_date + '\t\t') + (res_money + '\n') + self .data
         return True
     def NextDate(self):
         if self.yy%4 == 1 :
@@ -96,7 +100,7 @@ class Crawler(object):
                     self.dd += 1
 
             elif self.mm == 2 :
-                if self.dd==29 :
+                if self.dd==28 :
                     self.dd =1
                     self.mm += 1
                 else :
@@ -108,7 +112,57 @@ class Crawler(object):
                     self.mm += 1
                 else :
                     self.dd += 1
+    def PrevDate(self):
+        if self.yy%4 == 1 :
+            if self.mm in [2,4,6,8,9,11,1] :
+                if self.dd==1 and self.mm==1: 
+                    self.dd = 31
+                    self.mm = 12
+                    self.yy -= 1 
+                elif self.dd==1 and self.mm!=1 :
+                    self.dd =31
+                    self.mm -= 1
+                else :
+                    self.dd -= 1
 
+            elif self.mm == 3 :
+                if self.dd==1 :
+                    self.dd =29
+                    self.mm -= 1
+                else :
+                    self.dd -= 1 
+
+            else:
+                if self.dd == 1 :
+                    self.dd = 30
+                    self.mm -= 1
+                else :
+                    self.dd -= 1 
+        else:
+            if self.mm in [2,4,6,8,9,11,1] :
+                if self.dd==1 and self.mm==1 :
+                    self.dd = 31
+                    self.mm = 12
+                    self.yy -= 1
+                elif self.dd==1 and self.mm!=1 :
+                    self.dd =31
+                    self.mm -= 1
+                else :
+                    self.dd -= 1
+
+            elif self.mm == 3 :
+                if self.dd==1 :
+                    self.dd =28
+                    self.mm -= 1
+                else :
+                    self.dd -= 1 
+
+            else:
+                if self.dd==1 :
+                    self.dd =30
+                    self.mm -= 1
+                else :
+                    self.dd -= 1
     def Crawl(self , num , date):
         self.rec_id = num
         self.rec_date = date
@@ -119,14 +173,22 @@ class Crawler(object):
         self.mm = int(self.rec_date[4:6])
         self.dd = int(self.rec_date[7:9])
         cont = 0
-
+        if bool(self.Prev):
+            self.id_num -= 1
         while True:
             success = self.Query()
             if success is True :
-                self.id_num += 1
-                cont = 0
+                if bool(self.Prev): 
+                    self.id_num -= 1
+                    cont = 0
+                else:
+                    self.id_num += 1
+                    cont = 0
             elif  (success is False) and (cont==0):
-                self.NextDate()
+                if bool(self.Prev):
+                    self.PrevDate()
+                else:
+                    self.NextDate()
                 cont+=1
             else :
             	   break
@@ -152,5 +214,9 @@ if __name__ == '__main__':
 
     
 
-    c = Crawler()
-    c.Crawl(sys.argv[1],sys.argv[2])
+    c1 = Crawler(True)
+    c1.Crawl(sys.argv[1],sys.argv[2])
+    with open('data.txt' , 'a') as outFd:
+        outFd.write(c1.data)
+    c2 = Crawler(False)
+    c2.Crawl(sys.argv[1],sys.argv[2])
