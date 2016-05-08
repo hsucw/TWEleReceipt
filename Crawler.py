@@ -11,7 +11,7 @@ class Crawler(object):
         self.tasks = []
         self.conn = Connector()
         self.dbmgr = DBManager()
-        
+        self.c = Connector()
 
     def getTasks(self, task):
         """ getTasks """
@@ -19,28 +19,32 @@ class Crawler(object):
     
     def Query(self):
         
-        c = Connector()
+        
         #log.info('Connect to {}'.format(c.domain))
-
+        
         res = None
         while res is None:
-            c.imgRslr.reportFail(c.imgCode, c.imgSHA)
-            c.resolveImg()
-            log.info('[{}]Get Image {}:{}'.format(c.res.reason, c.tmp_file, c.imgCode))
+            
+            if not self.c.session_valid:
+                self.c.imgRslr.reportFail(self.c.imgCode, self.c.imgSHA)
+                self.c.resolveImg()
+            log.info('[{}]Get Image {}:{}'.format(self.c.res.reason, self.c.tmp_file, self.c.imgCode))
             log.info('{} and {}'.format(self.id_tag + str(self.id_num) , str(self.yy) + '/' + str(self.mm).zfill(2) + '/' + str(self.dd).zfill(2)))
-            c.setPostData( self.id_tag + str(self.id_num) , str(self.yy) + '/' + str(self.mm).zfill(2) + '/' + str(self.dd).zfill(2) )
-            c.postForm( c.postPath )
-            log.info('[{} {}]Post data'.format(c.res.status,c.res.reason))
-            res = c.getInfo()
+            self.c.setPostData( self.id_tag + str(self.id_num) , str(self.yy) + '/' + str(self.mm).zfill(2) + '/' + str(self.dd).zfill(2) )
+            self.c.postForm( self.c.postPath )
+            log.info('[{} {}]Post data'.format(self.c.res.status,self.c.res.reason))
+            res = self.c.getInfo()
 
             with open("out.html" , "w") as outFd:
-                outFd.write(c.body)
+                outFd.write(self.c.body)
 
-        if not bool(c.info):
+        if not bool(self.c.info):
             print "No Record"
+            
             return False
         print("===[Query Result]===")
-        for k,r in c.info.iteritems():
+
+        for k,r in self.c.info.iteritems():
             print k+":\t\t"+r
             if k == 'id':
                 res_id = r
