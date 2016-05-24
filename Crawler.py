@@ -1,18 +1,21 @@
 #!/usr/local/bin python
 from Connector import Connector
 from DBManager import DBManager
+from TimeConvert import TimeConvert
+
+import socket
+import json
 import logging as log
 import sys
 import re
 import thread
 
 class Crawler(object):
-    def __init__(self, Prev):
+    def __init__(self):
         self.tasks = []
         self.conn = Connector()
         self.dbmgr = DBManager()
         self.c = Connector()
-        self.Prev = Prev
         self.data = ""
     def getTasks(self, task):
         """ getTasks """
@@ -30,8 +33,8 @@ class Crawler(object):
                 self.c.imgRslr.reportFail(self.c.imgCode, self.c.imgSHA)
                 self.c.resolveImg()
             log.info('[{}]Get Image {}:{}'.format(self.c.res.reason, self.c.tmp_file, self.c.imgCode))
-            log.info('{} and {}'.format(self.id_tag + str(self.id_num) , str(self.yy) + '/' + str(self.mm).zfill(2) + '/' + str(self.dd).zfill(2)))
-            self.c.setPostData( self.id_tag + str(self.id_num) , str(self.yy) + '/' + str(self.mm).zfill(2) + '/' + str(self.dd).zfill(2) )
+            log.info('{} and {}'.format(self.id_tag + str(self.id_num) , self.rec_date))
+            self.c.setPostData( self.id_tag + str(self.id_num) , self.rec_date )
             self.c.postForm( self.c.postPath )
             log.info('[{} {}]Post data'.format(self.c.res.status,self.c.res.reason))
             res = self.c.getInfo()
@@ -53,170 +56,74 @@ class Crawler(object):
                 res_money = r
             if k == 'date':
                 res_date = r
-        if not bool(self.Prev):
-            with open('data.txt' , 'a') as outFd:
-                outFd.write(res_id + '\t\t')
-                outFd.write(res_date + '\t\t')
-                outFd.write(res_money + '\n')
-        else:
-            self.data = (res_id + '\t\t') + (res_date + '\t\t') + (res_money + '\n') + self .data
+        
+        with open('data.txt' , 'a') as outFd:
+            outFd.write(res_id + '\t\t')
+            outFd.write(res_date + '\t\t')
+            outFd.write(res_money + '\n')
+        self.receipt[res_id] = (res_date,res_money)
         return True
-    def NextDate(self):
-        if self.yy%4 == 1 :
-            if self.mm in [1,3,5,7,8,10,12] :
-                if self.dd==31 and self.mm==12: 
-                    self.dd = 1
-                    self.mm = 1
-                    self.yy += 1
-                elif self.dd==31 and self.mm!=12 :
-                    self.dd =1
-                    self.mm += 1
-                else :
-                    self.dd += 1
 
-            elif self.mm == 2 :
-                if self.dd==29 :
-                    self.dd =1
-                    self.mm += 1
-                else :
-                    self.dd += 1 
-
-            else:
-                if self.dd == 30 :
-                    self.dd =1
-                    self.mm += 1
-                else :
-                    self.dd += 1 
-        else:
-            if self.mm in [1,3,5,7,8,10,12] :
-                if self.dd==31 and self.mm==12 :
-                    self.dd = 1
-                    self.mm = 1
-                    self.yy += 1
-                elif self.dd==31 and self.mm!=12 :
-                    self.dd =1
-                    self.mm += 1
-                else :
-                    self.dd += 1
-
-            elif self.mm == 2 :
-                if self.dd==28 :
-                    self.dd =1
-                    self.mm += 1
-                else :
-                    self.dd += 1 
-
-            else:
-                if self.dd==30 :
-                    self.dd =1
-                    self.mm += 1
-                else :
-                    self.dd += 1
-    def PrevDate(self):
-        if self.yy%4 == 1 :
-            if self.mm in [2,4,6,8,9,11,1] :
-                if self.dd==1 and self.mm==1: 
-                    self.dd = 31
-                    self.mm = 12
-                    self.yy -= 1 
-                elif self.dd==1 and self.mm!=1 :
-                    self.dd =31
-                    self.mm -= 1
-                else :
-                    self.dd -= 1
-
-            elif self.mm == 3 :
-                if self.dd==1 :
-                    self.dd =29
-                    self.mm -= 1
-                else :
-                    self.dd -= 1 
-
-            else:
-                if self.dd == 1 :
-                    self.dd = 30
-                    self.mm -= 1
-                else :
-                    self.dd -= 1 
-        else:
-            if self.mm in [2,4,6,8,9,11,1] :
-                if self.dd==1 and self.mm==1 :
-                    self.dd = 31
-                    self.mm = 12
-                    self.yy -= 1
-                elif self.dd==1 and self.mm!=1 :
-                    self.dd =31
-                    self.mm -= 1
-                else :
-                    self.dd -= 1
-
-            elif self.mm == 3 :
-                if self.dd==1 :
-                    self.dd =28
-                    self.mm -= 1
-                else :
-                    self.dd -= 1 
-
-            else:
-                if self.dd==1 :
-                    self.dd =30
-                    self.mm -= 1
-                else :
-                    self.dd -= 1
-    def Crawl(self , num , date):
+    def Crawl(self , num , date, direct, distance):
         self.rec_id = num
         self.rec_date = date
         
         self.id_tag = self.rec_id[0:2] 
-        self.id_num = int(self.rec_id[2:10])
-        self.yy = int(self.rec_date[0:3])
-        self.mm = int(self.rec_date[4:6])
-        self.dd = int(self.rec_date[7:9])
+        self.id_num = int(self.rec_id[2:10]) 
+        self.receipt = {}
         cont = 0
         cont2 = 0
-        if bool(self.Prev):
-            self.id_num -= 1
-        while True:
+        
+        while ( abs(int(self.id_num) - int(self.rec_id[2:10])) < distance):
             success = self.Query()
             if success is True :
-                if bool(self.Prev): 
-                    self.id_num -= 1
-                    cont = 0
-                    cont2 =0
-                else:
-                    self.id_num += 1
-                    cont = 0
-                    cont2 = 0
+                self.id_num += direct
+                cont = 0
+                cont2 = 0
             elif (success is False)  and (cont2 < 3):
-                if bool(self.Prev): 
-                    self.id_num -= 1
-                    cont2 += 1
-                else:
-                    self.id_num += 1
-                    cont2 += 1
+                self.id_num += direct
+                cont2 += direct
             elif  (success is False) and (cont==0) and (cont2 >= 3):
-                if bool(self.Prev):
-                    self.PrevDate()
-                    self.id_num += cont2
-                    cont2 = 0 
-                else:
-                    self.NextDate()
-                    self.id_num -= cont2
-                    cont2 = 0
+                self.rec_date = TimeConvert(self.rec_date , direct)
+                self.id_num -= cont2
+                cont2 = 0
                 cont+=1
             elif (success is False) and (cont!=0) and (cont2 >= 3) :
                 break
             else:
                 log.error('main loop unusually break')
                 sys.exit(1)
-
-
+        return self.receipt
 
 
 if __name__ == '__main__':
     """ give a guess for id & date"""
     log.basicConfig(level=log.INFO)
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_address = ('127.0.0.1', 5555)
+    print  'connecting to {} '.format(server_address)
+    sock.connect(server_address)
+    C = Crawler()
+    try:
+    
+        # Send data
+        
 
+        # Look for the response
+ 
+        data = sock.recv(256)
+        if data:
+            _data = data.strip().split()
+            if len(_data) != 5 or len(_data[0]) != 10 or len(_data[1]) != 9:
+                connection.sendall("=====Wrong Format=====\nShould be(ReceiptId,Date,HowMany)\n")
+            print "Recieve task : {} {} {} {}".format(_data[0],_data[1],_data[2],_data[3])
+            receipt = C.Crawl(_data[0],_data[1],int(_data[2]),int(_data[3]))
+            connection.sendall(json.dumps(receipt))
+            print "Task done!!"
+    finally:
+        print >>sys.stderr, 'closing socket'
+        sock.close()
+    '''
     if len(sys.argv) != 3:
         print("Usage: python Crawler.py [ID] [DATE]")
         log.error("Unknown input")
@@ -232,9 +139,9 @@ if __name__ == '__main__':
 
     
 
-    c1 = Crawler(True)
-    c1.Crawl(sys.argv[1],sys.argv[2])
-    with open('data.txt' , 'a') as outFd:
-        outFd.write(c1.data)
-    c2 = Crawler(False)
-    c2.Crawl(sys.argv[1],sys.argv[2])
+    c1 = Crawler()
+    c1.Crawl(sys.argv[1],sys.argv[2],1,100)
+    
+    c2 = Crawler()
+    c2.Crawl(sys.argv[1],sys.argv[2],-1,100)
+    '''
