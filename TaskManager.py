@@ -10,6 +10,7 @@ from DBManager import DBManager
 from TaskDBManager import TaskDBManager
 
 server_addr = ('127.0.0.1',5555)
+log.basicConfig(level=log.DEBUG)
 
 class TaskManager(object):
     def __init__(self):
@@ -24,20 +25,24 @@ class TaskManager(object):
     def AssignTask(self,number,date,direction,distance,(clientsock,addr)):
         success = 0
         datemodify = 0
+        db = DBManager()
         try:
             clientsock.sendall("{} {} {} {}".format(number,date,str(direction),str(distance)))
             data = clientsock.recv(4096)
+            print "original receive : {}".format(data)
             try:
                 receipt = json.loads(data)
             except:
                 print data
                 return -1,0
-            log.debug("receive : "+data)
+            log.debug("receive length : "+str(len(receipt)))
+            log.debug("receive : ")
+            print receipt
             if len(receipt) >= distance-5:
                 success = 1
             if receipt.get(number[0:2]+str(int(number[2:])+distance-1),date)[0] != date:
                 datemodify = direction
-            self.dbmanager.StoreData(receipt)
+            db.StoreData(receipt)
         except socket.error as e:
             
             print "shit happened {}".format(e)    
@@ -45,6 +50,7 @@ class TaskManager(object):
 
 
     def CrawlerHandler(self,clientsock,addr):
+        
         while not self.q.empty():
             wow = self.q.get()
             self.current.put(wow)
@@ -58,12 +64,13 @@ class TaskManager(object):
                 print "Fail!!Reach the end!!"
             self.current.get()
         else:
-            self.taskdbmanager.Clear()
+            
             print "=====All done====="
 
     def Run(self):
         
         data = self.taskdbmanager.GetData()
+        #self.taskdbmanager.Clear()                    dont clear for testing
         for i in data:
             i = (i[0].encode('ascii','ignore'),i[1].encode('ascii','ignore'),i[2],i[3])
             self.q.put(i)
@@ -86,7 +93,7 @@ class TaskManager(object):
             while not self.q.empty():
                 L.append(self.q.get())
             print L
-            self.taskdbmanager.Clear()
+            #self.taskdbmanager.Clear()               dont clear for testing
             self.taskdbmanager.StoreAll(L)
             print "=====Task Saved====="
 

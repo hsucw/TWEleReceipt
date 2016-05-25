@@ -53,7 +53,7 @@ class Crawler(object):
             if k == 'id':
                 res_id = r
             if k == 'money':
-                res_money = r
+                res_money = r.replace(',','')
             if k == 'date':
                 res_date = r
         
@@ -80,15 +80,17 @@ class Crawler(object):
                 self.id_num += direct
                 cont = 0
                 cont2 = 0
-            elif (success is False)  and (cont2 < 3):
+            elif (success is False)  and (abs(cont2) < 3):
+                print '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
                 self.id_num += direct
                 cont2 += direct
-            elif  (success is False) and (cont==0) and (cont2 >= 3):
+            elif  (success is False) and (cont==0) and (abs(cont2) >= 3):
                 self.rec_date = TimeConvert(self.rec_date , direct)
+                print "TimeConvert : "+ self.rec_date
                 self.id_num -= cont2
                 cont2 = 0
                 cont+=1
-            elif (success is False) and (cont!=0) and (cont2 >= 3) :
+            elif (success is False) and (cont!=0) and (abs(cont2) >= 3) :
                 break
             else:
                 log.error('main loop unusually break')
@@ -105,22 +107,19 @@ if __name__ == '__main__':
     sock.connect(server_address)
     C = Crawler()
     try:
-    
-        # Send data
-        
-
-        # Look for the response
- 
-        data = sock.recv(256)
-        if data:
-            _data = data.strip().split()
-            if len(_data) != 5 or len(_data[0]) != 10 or len(_data[1]) != 9:
-                connection.sendall("=====Wrong Format=====\nShould be(ReceiptId,Date,HowMany)\n")
-            print "Recieve task : {} {} {} {}".format(_data[0],_data[1],_data[2],_data[3])
-            receipt = C.Crawl(_data[0],_data[1],int(_data[2]),int(_data[3]))
-            connection.sendall(json.dumps(receipt))
-            print "Task done!!"
-    finally:
+        while True:
+            data = sock.recv(256)
+            if data:
+                _data = data.strip().split()
+                if len(_data) != 4 or len(_data[0]) != 10 or len(_data[1]) != 9:
+                    print "=====Wrong Format=====\nShould be(ReceiptId,Date,HowMany)\n{}".format(data)
+                    sock.sendall("=====Wrong Format=====\nShould be(ReceiptId,Date,HowMany)\n")
+                print "Recieve task : {} {} {} {}".format(_data[0],_data[1],_data[2],_data[3])
+                receipt = C.Crawl(_data[0],_data[1],int(_data[2]),int(_data[3]))
+                print "send : \n{}".format(receipt)
+                sock.sendall(json.dumps(receipt))
+                print "Task done!!"
+    except KeyboardInterrupt:
         print >>sys.stderr, 'closing socket'
         sock.close()
     '''
