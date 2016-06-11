@@ -113,7 +113,7 @@ class Connector(object):
 
     def getInfo(self):
         self.info = self.htmlRslr.resolve(self.body)
-        if not bool(self.info):
+        if (self.info==None):
             self.session_valid = False
         else:
             self.session_valid = True
