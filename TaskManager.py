@@ -41,7 +41,7 @@ class TaskManager(object):
             if len(receipt) >= distance-5:
                 success = 1
             
-            if receipt.get(number[0:2]+str(int(number[2:])+distance*direction-1),[date])[0] != date:
+            if receipt.get(number[0:2]+str(int(number[2:])+distance*direction-1).zfill(8),[date])[0] != date:
                 datemodify = direction
             db.StoreData(receipt)
         except socket.error as e:
@@ -55,7 +55,7 @@ class TaskManager(object):
         while True:
             if not self.q.empty():
                 wow = self.q.get()
-                if db.Findid(wow[0]) and db.Findid(wow[0][:2] + str(int(wow[0][2:])+wow[2])):
+                if db.Findid(wow[0]) and db.Findid(wow[0][:2] + str(int(wow[0][2:])+wow[2]).zfill(8)):
                     log.debug("data is already found")
                     continue
                 self.current.put(wow)
@@ -65,15 +65,15 @@ class TaskManager(object):
                 if s:
                     print "Success!!Add new Task~"
                     log.debug('add new Task : ' + TimeConvert(wow[1],d) )
-                    self.q.put( (wow[0][:2] + str(int(wow[0][2:])+wow[3]*wow[2]),TimeConvert(wow[1],d),wow[2],wow[3]) )
+                    self.q.put( (wow[0][:2] + str(int(wow[0][2:])+wow[3]*wow[2]).zfill(8),TimeConvert(wow[1],d),wow[2],wow[3]) )
                 else:
                     print "Reach end!!Add guess data!!"             
-                    self.guess.put( (wow[0][:2] + str(int(wow[0][2:])+wow[3]*wow[2]*5),TimeConvert(wow[1],0),wow[2],wow[3],14,20) )
+                    self.guess.put( (wow[0][:2] + str(int(wow[0][2:])+wow[3]*wow[2]*5).zfill(8),TimeConvert(wow[1],0),wow[2],wow[3],14,20) )
                     
                 self.current.get()
             elif not self.guess.empty():
                 wow = self.guess.get()
-                if db.Findid(wow[0]) and db.Findid(wow[0][:2] + str(int(wow[0][2:])+wow[2])):
+                if db.Findid(wow[0]) and db.Findid(wow[0][:2] + str(int(wow[0][2:])+wow[2]).zfill(8)):
                     log.debug("data is already found")
                     continue
                 print "Assign Task:{} {} {} {} from guess".format(wow[0],wow[1],wow[2],wow[3])
@@ -82,14 +82,14 @@ class TaskManager(object):
                 if s:
                     print "Success!!Add new Task~"
                     log.debug('add new Task : ' + TimeConvert(wow[1],d) )
-                    self.q.put( (wow[0][:2] + str(int(wow[0][2:])+wow[3]*wow[2]),TimeConvert(wow[1],d),wow[2],wow[3]) )
+                    self.q.put( (wow[0][:2] + str(int(wow[0][2:])+wow[3]*wow[2]).zfill(8),TimeConvert(wow[1],d),wow[2],wow[3]) )
                     self.q.put( (wow[0], wow[1], wow[2]*(-1), wow[3]) )
                 else:
                     print "guess fail"
                     if wow[5]>0: 
                         
                         if wow[4]==14:
-                            self.guess.put( (wow[0][:2] + str(int(wow[0][2:])+wow[3]*wow[2]*5),TimeConvert(wow[1],0),wow[2],wow[3],14,wow[5]-1) )
+                            self.guess.put( (wow[0][:2] + str(int(wow[0][2:])+wow[3]*wow[2]*5).zfill(8),TimeConvert(wow[1],0),wow[2],wow[3],14,wow[5]-1) )
                             self.guess.put( (wow[0] ,TimeConvert(wow[1],1),wow[2],wow[3],wow[4]-1,wow[5]) )
                             self.guess.put( (wow[0] ,TimeConvert(wow[1],-1),wow[2],wow[3],wow[4]-2,wow[5]) )
                         elif wow[4]==13:
@@ -99,10 +99,10 @@ class TaskManager(object):
                         else :
                             log.error("guess data : {},{},{},{},{},{},{} should not in guess queue".format(wow[0],wow[1],wow[2],wow[3],wow[4],wow[5]))
                     else:
-                        self.guess2.put( (wow[0][:2] + str(int(wow[0][2:])+wow[3]*wow[2]*5),TimeConvert(wow[1],0),wow[2],wow[3],14,wow[5]-1) )
+                        self.guess2.put( (wow[0][:2] + str(int(wow[0][2:])+wow[3]*wow[2]*5).zfill(8),TimeConvert(wow[1],0),wow[2],wow[3],14,wow[5]-1) )
             elif not self.guess2.empty():
                 wow = self.guess2.get()
-                if db.Findid(wow[0]) and db.Findid(wow[0][:2] + str(int(wow[0][2:])+wow[2])):
+                if db.Findid(wow[0]) and db.Findid(wow[0][:2] + str(int(wow[0][2:])+wow[2]).zfill(8)):
                     log.debug("data is already found")
                     continue
                 print "Assign Task:{} {} {} {} from guess2".format(wow[0],wow[1],wow[2],wow[3])
@@ -111,7 +111,7 @@ class TaskManager(object):
                 if s:
                     print "Success!!Add new Task~"
                     log.debug('add new Task : ' + TimeConvert(wow[1],d) )
-                    self.q.put( (wow[0][:2] + str(int(wow[0][2:])+wow[3]*wow[2]),TimeConvert(wow[1],d),wow[2],wow[3]) )
+                    self.q.put( (wow[0][:2] + str(int(wow[0][2:])+wow[3]*wow[2]).zfill(8),TimeConvert(wow[1],d),wow[2],wow[3]) )
                     self.q.put( (wow[0], wow[1], wow[2]*(-1), wow[3]) )
                 else:
                     print "guess fail"
@@ -127,7 +127,7 @@ class TaskManager(object):
                             log.info("date guess finished")
                     else:
                         if wow[4]==14:
-                            self.guess2.put( (wow[0][:2] + str(int(wow[0][2:])+wow[3]*wow[2]*5),TimeConvert(wow[1],0),wow[2],wow[3],14,wow[5]-1) )
+                            self.guess2.put( (wow[0][:2] + str(int(wow[0][2:])+wow[3]*wow[2]*5).zfill(8),TimeConvert(wow[1],0),wow[2],wow[3],14,wow[5]-1) )
                             self.guess2.put( (wow[0] ,TimeConvert(wow[1],1),wow[2],wow[3],wow[4]-1,wow[5]) )
                             self.guess2.put( (wow[0] ,TimeConvert(wow[1],-1),wow[2],wow[3],wow[4]-2,wow[5]) )
                         elif (wow[4]%2) == 1 and wow[4]>=0:
