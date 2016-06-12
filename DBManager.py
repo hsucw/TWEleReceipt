@@ -5,13 +5,13 @@ class DBManager(object):
         self.conn = sqlite3.connect("DB/receipt.db")
         self.c = self.conn.cursor()
     def CreateTable(self):
-        self.c.execute("CREATE TABLE if not exists receipt (id TEXT, date TEXT, money INTEGER)")
+        self.c.execute("CREATE TABLE if not exists receipt (id TEXT, date TEXT, money INTEGER, taxid TEXT)")
     def StoreData(self,data):
         for key in data: 
             self.c.execute("SELECT * FROM receipt WHERE id == '{}'".format(key))
             if self.c.fetchone() == None:
                 
-                self.c.execute("INSERT INTO receipt VALUES ('{}','{}',{})".format(key,data[key][0],data[key][1]))
+                self.c.execute("INSERT INTO receipt VALUES ('{}','{}',{},'{}')".format(key,data[key][0],data[key][1],str(data[key][2])).zfill(8))
                 
         self.conn.commit()
     def Findid(self,num):

@@ -56,12 +56,10 @@ class Crawler(object):
                 res_money = r.replace(',','')
             if k == 'date':
                 res_date = r
+            if k == 'taxid':
+                res_taxid = r
         
-        with open('data.txt' , 'a') as outFd:
-            outFd.write(res_id + '\t\t')
-            outFd.write(res_date + '\t\t')
-            outFd.write(res_money + '\n')
-        self.receipt[res_id] = (res_date,res_money)
+        self.receipt[res_id] = (res_date,res_money,res_taxid)
         return True
 
     def Crawl(self , num , date, direct, distance):

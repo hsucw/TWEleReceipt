@@ -30,7 +30,7 @@ class TaskManager(object):
         db = DBManager()
         try:
             clientsock.sendall("{} {} {} {}".format(number,date,str(direction),str(distance)))
-            data = clientsock.recv(4096)
+            data = clientsock.recv(65536)
             
             try:
                 receipt = json.loads(data)
@@ -46,16 +46,20 @@ class TaskManager(object):
             db.StoreData(receipt)
         except socket.error as e:
             
-            print "shit happened {}".format(e)    
+            print "shit happened {}".format(e)
+            time.sleep(60)    
         return success,datemodify
 
 
     def CrawlerHandler(self,clientsock,addr):
         db = DBManager()
         while True:
+
+            
+
             if not self.q.empty():
                 wow = self.q.get()
-                if db.Findid(wow[0]) and db.Findid(wow[0][:2] + str(int(wow[0][2:])+wow[2]).zfill(8)):
+                if db.Findid(wow[0]) and db.Findid(wow[0][:2] + str(int(wow[0][2:])+wow[2]).zfill(8)) and db.Findid(wow[0][:2] + str(int(wow[0][2:])+wow[2]*2).zfill(8)):
                     log.debug("data is already found")
                     continue
                 self.current.put(wow)
@@ -73,7 +77,7 @@ class TaskManager(object):
                 self.current.get()
             elif not self.guess.empty():
                 wow = self.guess.get()
-                if db.Findid(wow[0]) and db.Findid(wow[0][:2] + str(int(wow[0][2:])+wow[2]).zfill(8)):
+                if db.Findid(wow[0]) and db.Findid(wow[0][:2] + str(int(wow[0][2:])+wow[2]).zfill(8)) and db.Findid(wow[0][:2] + str(int(wow[0][2:])+wow[2]*2).zfill(8)):
                     log.debug("data is already found")
                     continue
                 print "Assign Task:{} {} {} {} from guess".format(wow[0],wow[1],wow[2],wow[3])
@@ -102,7 +106,7 @@ class TaskManager(object):
                         self.guess2.put( (wow[0][:2] + str(int(wow[0][2:])+wow[3]*wow[2]*5).zfill(8),TimeConvert(wow[1],0),wow[2],wow[3],14,wow[5]-1) )
             elif not self.guess2.empty():
                 wow = self.guess2.get()
-                if db.Findid(wow[0]) and db.Findid(wow[0][:2] + str(int(wow[0][2:])+wow[2]).zfill(8)):
+                if db.Findid(wow[0]) and db.Findid(wow[0][:2] + str(int(wow[0][2:])+wow[2]).zfill(8)) and db.Findid(wow[0][:2] + str(int(wow[0][2:])+wow[2]*2).zfill(8)):
                     log.debug("data is already found")
                     continue
                 print "Assign Task:{} {} {} {} from guess2".format(wow[0],wow[1],wow[2],wow[3])
@@ -141,6 +145,13 @@ class TaskManager(object):
             else:
                 print "queue is empty"
                 time.sleep(20)
+            # delete after testing
+            with open('record.txt' , 'a') as outFd:
+                outFd.write(wow[0] + '\t')
+                outFd.write(wow[1] + '\t')
+                outFd.write(str(wow[2]) + '\t')
+                outFd.write(str(wow[3]) + '\n')
+            # delete after testing
                 
     def CheckTaskDB(self):
         task_db = TaskDBManager()
