@@ -103,7 +103,7 @@ class Connector(object):
         while True:
             try:
                 self.res = self.conn.getresponse()
-            except httplib.ResponseNotReady:
+            except httplib.ResponseNotReady or httplib.BadStatusLine:
                 log.debug( "retry" )
                 continue
             else:

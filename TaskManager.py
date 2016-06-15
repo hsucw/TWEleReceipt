@@ -5,6 +5,7 @@ import Queue
 import logging as log
 import thread
 import time
+import random
 
 from TimeConvert import TimeConvert
 from DBManager import DBManager
@@ -49,7 +50,7 @@ class TaskManager(object):
                     break;
                 except :
                     print 'store data fail'
-                    time.sleep(1)
+                    time.sleep(random.randint(1,60))
             
         except socket.error as e:
             
