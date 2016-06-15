@@ -43,7 +43,14 @@ class TaskManager(object):
             
             if receipt.get(number[0:2]+str(int(number[2:])+distance*direction-1).zfill(8),[date])[0] != date:
                 datemodify = direction
-            db.StoreData(receipt)
+            while True:
+                try:
+                    db.StoreData(receipt)
+                    break;
+                except :
+                    print 'store data fail'
+                    time.sleep(1)
+            
         except socket.error as e:
             
             print "shit happened {}".format(e)
@@ -96,9 +103,13 @@ class TaskManager(object):
                             self.guess.put( (wow[0][:2] + str(int(wow[0][2:])+wow[3]*wow[2]*5).zfill(8),TimeConvert(wow[1],0),wow[2],wow[3],14,wow[5]-1) )
                             self.guess.put( (wow[0] ,TimeConvert(wow[1],1),wow[2],wow[3],wow[4]-1,wow[5]) )
                             self.guess.put( (wow[0] ,TimeConvert(wow[1],-1),wow[2],wow[3],wow[4]-2,wow[5]) )
-                        elif wow[4]==13:
+                        elif (wow[4]%2) == 1 and wow[4]>=6:
+                            self.guess.put( (wow[0] ,TimeConvert(wow[1],1),wow[2],wow[3],wow[4]-2,wow[5]) )
+                        elif (wow[4]%2) == 0 and wow[4]>=6:
+                            self.guess.put( (wow[0] ,TimeConvert(wow[1],-1),wow[2],wow[3],wow[4]-2,wow[5]) )
+                        elif (wow[4]%2) == 1 and wow[4]<6:
                             self.guess2.put( (wow[0] ,TimeConvert(wow[1],1),wow[2],wow[3],wow[4]-2,wow[5]) )
-                        elif wow[4]==12:
+                        elif (wow[4]%2) == 0 and wow[4]<6:
                             self.guess2.put( (wow[0] ,TimeConvert(wow[1],-1),wow[2],wow[3],wow[4]-2,wow[5]) )
                         else :
                             log.error("guess data : {},{},{},{},{},{},{} should not in guess queue".format(wow[0],wow[1],wow[2],wow[3],wow[4],wow[5]))
@@ -184,7 +195,7 @@ class TaskManager(object):
                 print '...connected from:', addr
                 
                 thread.start_new_thread(self.CrawlerHandler,(clientsock,addr) )
-        except  KeyboardInterrupt:
+        except  :
             L = []
             while not self.current.empty():
                 L.append(self.current.get())
