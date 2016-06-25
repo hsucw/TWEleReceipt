@@ -132,11 +132,10 @@ class ImgResolver(object):
         im.save(self.tmp_file)
 
         # use tesseract
-        os.popen("tesseract -l eng {} stdout 2>/dev/null"\
-                .format(self.tmp_file))
-        f = open('stdout.txt','r')
-        imgCode = f.readline().replace('\n','')
         
+
+        imgCode = os.popen("tesseract -l eng {} stdout 2>/dev/null"\
+                .format(self.tmp_file)).readline()[0:-1]
         log.info("Guess Ratio:{}/{}={}%".format(self.guess_hit+1, self.guess_total, \
                 ((self.guess_hit+1)*100/(self.guess_total))))
         return imgCode
