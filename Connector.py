@@ -10,6 +10,8 @@ import Cookie
 from ImgResolver import ImgResolver as imgrslr
 from HTMLDataResolver import HTMLDataResolver as hdrslr
 
+#log.basicConfig(level=log.DEBUG)
+
 class Connector(object):
     def __init__(self, domain="www.einvoice.nat.gov.tw"):
         self.domain = domain
@@ -21,7 +23,7 @@ class Connector(object):
         self.imgCode = ""
         self.imgSHA = ""
         self.tmp_file = ""
-
+                
         self.imgRslr = imgrslr()
         self.imgRslr.loadPics()
         self.htmlRslr = hdrslr()
@@ -30,6 +32,7 @@ class Connector(object):
         self.publicAudit = '/APMEMBERVAN/PublicAudit/PublicAudit'
         self.postPath = '/APMEMBERVAN/PublicAudit/PublicAudit!queryInvoiceByCon'
         self.imgPath = '/APMEMBERVAN/PublicAudit/PublicAudit!generateImageCode'
+        self.session_valid = False
 
     def setReqHeader(self):
         self.headers['Host']="www.einvoice.nat.gov.tw"
@@ -100,7 +103,7 @@ class Connector(object):
         while True:
             try:
                 self.res = self.conn.getresponse()
-            except httplib.ResponseNotReady:
+            except httplib.ResponseNotReady or httplib.BadStatusLine:
                 log.debug( "retry" )
                 continue
             else:
@@ -110,7 +113,12 @@ class Connector(object):
 
     def getInfo(self):
         self.info = self.htmlRslr.resolve(self.body)
+        if (self.info==None):
+            self.session_valid = False
+        else:
+            self.session_valid = True
         return self.info
+    
 
 if __name__ == '__main__':
     """ give a guess for id & date"""
