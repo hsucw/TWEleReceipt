@@ -1,11 +1,10 @@
-#!/usr/local/bin/python
+#!env python2
 import httplib, urllib
 import os
 import logging as log
 import time
 import sys
 import re
-import Cookie
 
 from ImgResolver import ImgResolver as imgrslr
 from HTMLDataResolver import HTMLDataResolver as hdrslr
@@ -23,7 +22,7 @@ class Connector(object):
         self.imgCode = ""
         self.imgSHA = ""
         self.tmp_file = ""
-                
+
         self.imgRslr = imgrslr()
         self.imgRslr.loadPics()
         self.htmlRslr = hdrslr()
@@ -118,14 +117,14 @@ class Connector(object):
         else:
             self.session_valid = True
         return self.info
-    
+
 
 if __name__ == '__main__':
     """ give a guess for id & date"""
     log.basicConfig(level=log.INFO)
 
     if len(sys.argv) != 3:
-        print("Usage: python Connector.py [ID] [DATE]")
+        print("Usage: python Connector.py [RECEIPT_ID] [DATE(YYYY/MM/DD)]")
         log.error("Unknown input")
         sys.exit(1)
 

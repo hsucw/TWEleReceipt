@@ -1,4 +1,4 @@
-from TaskDBManager import TaskDBManager 
+from DBManager import TaskDBManager
 
 taskdbmanager = TaskDBManager()
 
