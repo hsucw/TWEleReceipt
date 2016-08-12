@@ -11,7 +11,7 @@ class DBManager(DBBaseManager):
         super(DBManager, self).__init__()
 
     def CreateTable(self):
-        self.c.execute("CREATE TABLE if not exists receipt (id TEXT, date TEXT, money INTEGER, taxid TEXT)")
+        self.c.execute("CREATE TABLE if not exists receipt (id TEXT UNIQUE, date TEXT, money INTEGER, taxid TEXT)")
     def StoreData(self,data):
         for key in data:
             #self.c.execute("SELECT * FROM receipt WHERE id = '{}'".format(key))
@@ -42,7 +42,7 @@ class TaskDBManager(DBBaseManager):
         super(TaskDBManager, self).__init__()
 
     def CreateTable(self):
-        self.c.execute("CREATE TABLE if not exists task (id TEXT,date TEXT,direction INTEGER,distance INTEGER)")
+        self.c.execute("CREATE TABLE if not exists task (id TEXT UNIQUE,date TEXT,direction INTEGER,distance INTEGER)")
 
     def StoreAll(self,data):
         for i in data:
