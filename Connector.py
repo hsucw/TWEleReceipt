@@ -112,6 +112,37 @@ class Connector(object):
             self.session_valid = True
         return self.info
 
+    def guessRandNo(self):
+        import json
+        with open("guess_list.json","r") as f:
+            guess_list = json.loads(f.readline())
+
+        list_len = len(guess_list)
+        guess_index = 0
+        randNo = None
+        while randNo is None:
+
+            if not self.session_valid:
+                self.imgRslr.reportFail(self.imgCode, self.imgSHA)
+                self.resolveImg()
+
+            self.postData['publicAuditVO.randomNumber'] = guess_list[guess_index]
+            self.postForm( self.postPath )
+
+            if self.htmlRslr.findDetail(self.body):
+                randNo = guess_list[guess_index]
+                print("\nRandom Number Found "+randNo)
+                break
+
+            if guess_index < list_len:
+                print "\rtrying rand no {}, total {}/{}".format(guess_list[guess_index],guess_index+1,list_len),
+
+                guess_index += 1
+            else:
+                print("\nRandom Number Not Found")
+                break
+
+
 
 if __name__ == '__main__':
     """ give a guess for id & date"""
@@ -141,8 +172,15 @@ if __name__ == '__main__':
         with open("out.html", "w") as outFd:
             outFd.write(c.body)
 
+
     if not bool(c.info):
         print "No Record"
     print("===[Query Result]===")
     for k, r in c.info.iteritems():
         print k+":\t\t"+r
+
+    guessRandNo = raw_input("Info found, will you like to guess the random number? [Y/N]:")
+    if guessRandNo.lower() == 'y':
+        c.guessRandNo()
+    else:
+        print("Bye")
