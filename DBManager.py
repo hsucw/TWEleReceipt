@@ -42,7 +42,7 @@ class TaskDBManager(DBBaseManager):
         super(TaskDBManager, self).__init__()
 
     def CreateTable(self):
-        self.c.execute("CREATE TABLE if not exists task (id TEXT UNIQUE,date TEXT,direction INTEGER,distance INTEGER)")
+        self.c.execute("CREATE TABLE if not exists task (id TEXT ,date TEXT,direction INTEGER,distance INTEGER)")
 
     def StoreAll(self,data):
         for i in data:
