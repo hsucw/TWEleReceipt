@@ -76,7 +76,6 @@ if __name__ == '__main__':
     rows = D.c.fetchall()
     revenue = {}
     for row in rows:
-        print row
         if str(row[1])[:6] not in revenue:
             revenue[ str(row[1])[:6] ] = row[2]
         else:

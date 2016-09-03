@@ -66,20 +66,33 @@ class TaskManager(object):
 
             if not self.q.empty():
                 wow = self.q.get()
-                if db.Findid(wow[0]) and db.Findid(wow[0][:2] + str(int(wow[0][2:])+wow[2]).zfill(8)) and db.Findid(wow[0][:2] + str(int(wow[0][2:])+wow[2]*2).zfill(8)):
+                task_info_list = wow
+                receipt_id, receipt_date, direction, distance = task_info_list
+                if db.Findid(receipt_id)\
+                and db.Findid(receipt_id[:2] + str(int(receipt_id[2:])+direction).zfill(8))\
+                and db.Findid(receipt_id[:2] + str(int(receipt_id[2:])+direction*2).zfill(8)):
                     log.debug("data is already found")
                     continue
                 self.current.put(wow)
-                print "Assign Task:{} {} {} {}".format(wow[0],wow[1],wow[2],wow[3])
-                s,d = self.AssignTask(wow[0],wow[1],wow[2],wow[3],(clientsock,addr))
+                print "Assign Task:{} {} {} {}".format(receipt_id,receipt_date,direction,distance)
+                s,d = self.AssignTask(receipt_id,receipt_date,direction,distance,(clientsock,addr))
 
                 if s:
                     print "Success!!Add new Task~"
-                    log.debug('add new Task : ' + TimeConvert(wow[1],d) )
-                    self.q.put( (wow[0][:2] + str(int(wow[0][2:])+wow[3]*wow[2]).zfill(8),TimeConvert(wow[1],d),wow[2],wow[3]) )
+                    log.debug('add new Task : ' + TimeConvert(receipt_date,d) )
+                    self.q.put((receipt_id[:2] + str(int(receipt_id[2:])+distance*direction).zfill(8),
+                                TimeConvert(receipt_date,d),
+                                direction,
+                                distance))
                 else:
                     print "Reach end!!Add guess data!!"
-                    self.guess.put( (wow[0][:2] + str(int(wow[0][2:])+wow[3]*wow[2]*5).zfill(8),TimeConvert(wow[1],0),wow[2],wow[3],14,20) )
+                    self.guess.put((
+                        receipt_id[:2] + str(int(receipt_id[2:])+distance*direction*5).zfill(8),
+                        TimeConvert(receipt_date,0),
+                        direction,
+                        distance,
+                        14,
+                        20))
 
                 self.current.get()
             elif not self.guess.empty():
@@ -182,7 +195,7 @@ class TaskManager(object):
         for i in data:
             i = (i[0].encode('ascii','ignore'),i[1].encode('ascii','ignore'),i[2],i[3])
             self.q.put(i)
-        print '!!!!!!!!!!!!!!'
+        print 'Server Start'
         thread.start_new_thread(self.CheckTaskDB,() )
         try:
             serversock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

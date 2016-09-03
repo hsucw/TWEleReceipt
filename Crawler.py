@@ -43,8 +43,8 @@ class Crawler(object):
 
         if not bool(self.c.info):
             print "No Record"
-
             return False
+
         print("===[Query Result]===")
 
         for k,r in self.c.info.iteritems():
@@ -97,7 +97,7 @@ class Crawler(object):
 
 if __name__ == '__main__':
     """ give a guess for id & date"""
-    log.basicConfig(level=log.INFO)
+    log.basicConfig(level=log.DEBUG)
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_address = ('127.0.0.1', 5555)
     print  'connecting to {} '.format(server_address)
