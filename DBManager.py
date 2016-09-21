@@ -42,11 +42,14 @@ class TaskDBManager(DBBaseManager):
         super(TaskDBManager, self).__init__()
 
     def CreateTable(self):
-        self.c.execute("CREATE TABLE if not exists task (id TEXT ,date TEXT,direction INTEGER,distance INTEGER)")
+        self.c.execute("CREATE TABLE if not exists task \
+            (id TEXT ,date TEXT, date_guess INTEGER,direction INTEGER,distance INTEGER, fail_cnt INTEGER)")
 
-    def StoreAll(self,data):
-        for i in data:
-            self.c.execute("INSERT INTO task VALUES (?,?,?,?)",(i[0],i[1],i[2],i[3]))
+    def store_task_list(self, task_list):
+        for task in task_list:
+            self.c.execute("INSERT INTO task VALUES (?,?,?,?,?,?)",(
+                task['receipt'],task['date'], task['date_guess'],
+                task['direction'] ,task['distance'], task['fail_cnt']))
         self.conn.commit()
 
     def GetData(self):
