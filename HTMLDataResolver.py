@@ -82,6 +82,17 @@ class HTMLDataResolver(object):
             data = None
         return data
 
+    def findDetail(self, content):
+        """resolve the detail items"""
+        dom = htmldom.HtmlDom().createDom(content)
+
+        items = dom.find("table[id=invoiceDetailTable]")
+        if items.length() == 0:
+            return False
+        else:
+            return True
+
+
 
 if __name__ == "__main__":
     """give a .html retrived from the www.einvoice.nat.gov.tw """

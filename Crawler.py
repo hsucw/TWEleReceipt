@@ -13,22 +13,21 @@ import thread
 class Crawler(object):
     def __init__(self):
         self.tasks = []
-        self.conn = Connector()
         self.dbmgr = DBManager()
         self.c = Connector()
         self.data = ""
     def getTasks(self, task):
         """ getTasks """
         pass
-    
+
     def Query(self):
-        
-        
+
+
         #log.info('Connect to {}'.format(c.domain))
-        
+
         res = None
         while res is None:
-            
+
             if not self.c.session_valid:
                 self.c.imgRslr.reportFail(self.c.imgCode, self.c.imgSHA)
                 self.c.resolveImg()
@@ -44,8 +43,8 @@ class Crawler(object):
 
         if not bool(self.c.info):
             print "No Record"
-            
             return False
+
         print("===[Query Result]===")
 
         for k,r in self.c.info.iteritems():
@@ -58,20 +57,20 @@ class Crawler(object):
                 res_date = r
             if k == 'taxid':
                 res_taxid = r
-        
+
         self.receipt[res_id] = (res_date,res_money,res_taxid)
         return True
 
     def Crawl(self , num , date, direct, distance):
         self.rec_id = num
         self.rec_date = date
-        
-        self.id_tag = self.rec_id[0:2] 
-        self.id_num = int(self.rec_id[2:10]) 
+
+        self.id_tag = self.rec_id[0:2]
+        self.id_num = int(self.rec_id[2:10])
         self.receipt = {}
         cont = 0
         cont2 = 0
-        
+
         while ( abs(int(self.id_num) - int(self.rec_id[2:10])) < distance):
             success = self.Query()
             if success is True :
@@ -98,7 +97,7 @@ class Crawler(object):
 
 if __name__ == '__main__':
     """ give a guess for id & date"""
-    log.basicConfig(level=log.INFO)
+    log.basicConfig(level=log.DEBUG)
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_address = ('127.0.0.1', 5555)
     print  'connecting to {} '.format(server_address)
@@ -134,11 +133,11 @@ if __name__ == '__main__':
         log.error("Unknown input")
         sys.exit(1)
 
-    
+
 
     c1 = Crawler()
     c1.Crawl(sys.argv[1],sys.argv[2],1,100)
-    
+
     c2 = Crawler()
     c2.Crawl(sys.argv[1],sys.argv[2],-1,100)
     '''

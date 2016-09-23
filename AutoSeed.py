@@ -1,8 +1,5 @@
 import sys
-
-
-from TaskDBManager import TaskDBManager
-from DBManager import DBManager
+from DBManager import DBManager, TaskDBManager
 
 
 taskdbmanager = TaskDBManager()
