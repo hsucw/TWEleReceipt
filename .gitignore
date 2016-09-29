@@ -4,7 +4,8 @@
 pic/
 .DS_Store
 *.pyc
-
+.idea/*
+*.swp
 *.txt
 .ropeproject/
 DB/

@@ -1,15 +1,25 @@
 import sqlite3
 import sys
+import os
 
 class DBBaseManager(object):
     def __init__(self):
-        self.conn = sqlite3.connect("DB/TWEleReceipt.db")
+
+        basedir = os.path.dirname("./DB" )
+        filePath = "./DB/TWEleReceipt.db";
+
+        if not os.path.exists( basedir ):
+            os.makedirs( basedir )
+
+
+
+        self.conn = sqlite3.connect(filePath)
         self.c = self.conn.cursor()
 
 class DBManager(DBBaseManager):
     def __init__(self):
         super(DBManager, self).__init__()
-
+        self.CreateTable()
     def CreateTable(self):
         self.c.execute("CREATE TABLE if not exists receipt (id TEXT UNIQUE, date TEXT, money INTEGER, taxid TEXT)")
     def StoreData(self,data):
@@ -40,6 +50,7 @@ class DBManager(DBBaseManager):
 class TaskDBManager(DBBaseManager):
     def __init__(self):
         super(TaskDBManager, self).__init__()
+        self.CreateTable()
 
     def CreateTable(self):
         self.c.execute("CREATE TABLE if not exists task \

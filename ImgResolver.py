@@ -6,6 +6,7 @@ import sys
 import hashlib as hash
 import errno
 import re
+import random
 from PIL import Image, ImageEnhance
 
 class ImgResolver(object):
@@ -94,6 +95,9 @@ class ImgResolver(object):
         log.debug("Report Fail:{}".format(imgCode))
 
     def learn(self, imgSHA, imgCode, correct):
+
+        #print imgSHA, imgCode, correct
+
         if self.tmp_file is "":
             return
 
@@ -113,7 +117,10 @@ class ImgResolver(object):
     def tesseract(self, img):
 
         # keep the data
-        self.tmp_file = "tmp_"+int(time.time()).__str__()+".jpeg"
+        fileName = "tmp_"+int(time.time()+random.randint(1,99999)).__str__()+".jpeg"
+        while os.path.exists( fileName ):
+            fileName = "tmp_"+int(time.time()+random.randint(1,99999)).__str__()+".jpeg"
+        self.tmp_file = fileName
         with open(self.tmp_file, "w") as oFd:
             oFd.write(img)
         
@@ -132,12 +139,11 @@ class ImgResolver(object):
         im.save(self.tmp_file)
 
         # use tesseract
-        
 
         imgCode = os.popen("tesseract -l eng {} stdout 2>/dev/null"\
                 .format(self.tmp_file)).readline()[0:-1]
-        log.info("Guess Ratio:{}/{}={}%".format(self.guess_hit+1, self.guess_total, \
-                ((self.guess_hit+1)*100/(self.guess_total))))
+        #log.info("Guess Ratio:{}/{}={}%".format(self.guess_hit+1, self.guess_total, \
+        #        ((self.guess_hit+1)*100/(self.guess_total))))
         return imgCode
 
     def basicCheck(self, imgCode):

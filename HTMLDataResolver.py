@@ -69,8 +69,8 @@ class HTMLDataResolver(object):
         dom = htmldom.HtmlDom().createDom(content)
 
         items = dom.find("table[class=lpTb] tr td")
-        if items.length is 0:
-            return {}
+        if items.length() is 0:
+            return None
 
         try:
             data = self.findtheData(items)

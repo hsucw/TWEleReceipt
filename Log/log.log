@@ -1,0 +1,18 @@
+20160930
+
+bugFixed:
+
+1. file name conflict( two thread using same file )
+2. task should clone ( task can reuse and no error )
+3. Error count added ( So won't infinitely loop ) 
+4. some errors of direction
+
+
+
+toDo:
+	1. add comments
+	2. enhance guess algorithm
+
+==========================================================
+
+

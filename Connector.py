@@ -105,6 +105,7 @@ class Connector(object):
         return self.res.status
 
     def getInfo(self):
+
         self.info = self.htmlRslr.resolve(self.body)
         if (self.info is None):
             self.session_valid = False

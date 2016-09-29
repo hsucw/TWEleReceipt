@@ -23,18 +23,22 @@ class TaskSolver(object):
     def Query(self, receipt, receipt_date):
 
         res = None
-        while res is None:
 
+        errorCount = 10;
+
+        while res is None and errorCount > 0:
+            errorCount -= 1
+            print errorCount
             if not self.c.session_valid:
                 del self.c
                 self.c = Connector()
-                #self.c.imgRslr.reportFail(self.c.imgCode, self.c.imgSHA)
+                self.c.imgRslr.reportFail(self.c.imgCode, self.c.imgSHA)
                 self.c.resolveImg()
-            log.info('[{}]Get Image {}:{}'.format(self.c.res.reason, self.c.tmp_file, self.c.imgCode))
-            log.info('{} and {}'.format(receipt , receipt_date))
+            #log.info('[{}]Get Image {}:{}'.format(self.c.res.reason, self.c.tmp_file, self.c.imgCode))
+            #log.info('{} and {}'.format(receipt , receipt_date))
             self.c.setPostData(receipt, receipt_date )
             self.c.postForm( self.c.postPath )
-            log.info('[{} {}]Post data'.format(self.c.res.status,self.c.res.reason))
+            #log.info('[{} {}]Post data'.format(self.c.res.status,self.c.res.reason))
             res = self.c.getInfo()
 
             with open("out.html" , "w") as outFd:
@@ -59,6 +63,9 @@ class TaskSolver(object):
         return receipt_eng+str(receipt_num)
 
     def solve_task(self, task_dict):
+
+        self.receipt_done = {}
+
         distance = task_dict['distance']
         date = task_dict['date']
         direction = task_dict['direction']
@@ -72,7 +79,9 @@ class TaskSolver(object):
 
 
         while (abs(start_receipt_num - current_receipt_num) < distance):
+
             success = self.Query(current_receipt, date)
+            print "current " + current_receipt
             if success is True:
                 current_receipt = self._modify_receipt_num(current_receipt,direction)
                 current_receipt_num = int(current_receipt[2:10])
@@ -82,6 +91,7 @@ class TaskSolver(object):
             else:
                 log.error('main loop unusually break')
                 sys.exit(1)
+
 
         result = {
                 'success':success_count,

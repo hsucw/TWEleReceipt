@@ -21,7 +21,7 @@ class TaskServer(object):
         self.taskdbmanager = TaskDBManager()
         self.current = Queue.Queue()
         self.task_queue = Queue.Queue()
-        self.task_queue.put({'receipt':'JE25338346','date':'105/07/14','date_guess':0,
+        self.task_queue.put({'receipt':'KA13355801','date':'105/08/02','date_guess':0,
             'direction':1,'distance':100, 'fail_cnt':0})
 
     def send_and_receive(self, task_dict, clientsock):
@@ -30,12 +30,15 @@ class TaskServer(object):
             action = {"action":"solve","task":task_dict}
             clientsock.sendall(json.dumps(action))
             print "task send {}".format(task_dict)
+
+
             task_report_json = clientsock.recv(65536)
         except socket.error as e:
             print "shit happened {}".format(e)
             time.sleep(60)
 
         task_report = json.loads(task_report_json)
+        print task_report
         query_result = task_report['result']
         # some is success
         if query_result['success'] >0:
@@ -59,9 +62,12 @@ class TaskServer(object):
                 task['date'] = self._modify_date(origin_task['date'],1)
                 self.task_queue.put(task)
 
+
+                task = task_report['task'].copy()
                 task['date_guess'] = -1
                 task['date'] = self._modify_date(origin_task['date'],-1)
                 self.task_queue.put(task)
+
 
 
         # nothing is success(error at first)
@@ -75,6 +81,7 @@ class TaskServer(object):
                 task['date'] = self._modify_date(origin_task['date'],1)
                 self.task_queue.put(task)
 
+                task = task_report['task'].copy()
                 task['date_guess'] = -1
                 task['date'] = self._modify_date(origin_task['date'],-1)
                 self.task_queue.put(task)
@@ -107,7 +114,8 @@ class TaskServer(object):
     def task_manager(self, clientsock):
         db = DBManager()
 
-        while not self.task_queue.empty():
+        while True:
+        #while not self.task_queue.empty():
             task = self.task_queue.get()
             self.send_and_receive(task, clientsock)
 
@@ -135,8 +143,9 @@ class TaskServer(object):
         print 'Server Start'
         thread.start_new_thread(self.check_task_db,() )
         try:
-            serversock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
+            serversock = socket.socket(socket.AF_INET, socket.SOCK_STREAM,)
+            serversock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             serversock.bind(server_addr)
             serversock.listen(5)
             while 1:
@@ -154,7 +163,7 @@ class TaskServer(object):
                 L.append(self.task_queue.get())
             print L
 
-            self.taskdbmanager.store_task_list(L)
+            #self.taskdbmanager.store_task_list(L)
             print "=====Task Saved====="
 
 if __name__ == '__main__':
