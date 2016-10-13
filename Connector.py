@@ -3,11 +3,12 @@ import httplib
 import urllib
 import logging as log
 import sys
+import os
 
 from ImgResolver import ImgResolver
 from HTMLDataResolver import HTMLDataResolver
 
-# log.basicConfig(level=log.DEBUG)
+log.basicConfig(level=log.INFO)
 
 
 class Connector(object):
@@ -97,11 +98,12 @@ class Connector(object):
             try:
                 self.res = self.conn.getresponse()
             except (httplib.ResponseNotReady ,httplib.BadStatusLine):
-                log.debug("retry")
+                log.info("retry")
                 continue
             else:
                 break
-        self.body = self.res.read()
+        if  self.res :
+            self.body = self.res.read()
         return self.res.status
 
     def getInfo(self):
@@ -162,6 +164,7 @@ if __name__ == '__main__':
 
     res = None
     while res is None:
+
         c.imgRslr.reportFail(c.imgCode, c.imgSHA)
         c.resolveImg()
         log.info('[{}]Get Image {}:{}'.format(c.res.reason, c.tmp_file, c.imgCode))
@@ -172,6 +175,9 @@ if __name__ == '__main__':
 
         with open("out.html", "w") as outFd:
             outFd.write(c.body)
+
+
+
 
 
     if not bool(c.info):

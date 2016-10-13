@@ -21,9 +21,11 @@ class TaskServer(object):
         self.taskdbmanager = TaskDBManager()
         self.current = Queue.Queue()
         self.task_queue = Queue.Queue()
-        self.task_queue.put({'receipt':'KA13355801','date':'105/08/02','date_guess':0,
-            'direction':1,'distance':100, 'fail_cnt':0})
+        self.task_queue.put({'receipt':'KR66318287','date':'105/09/29','date_guess':-1,
+            'direction':1,'distance':25, 'fail_cnt':0})
 
+        self.task_queue.put({'receipt': 'KR66306250', 'date': '105/09/22', 'date_guess': -1,
+                         'direction': -1, 'distance': 25, 'fail_cnt': 0})
     def send_and_receive(self, task_dict, clientsock):
         db = DBManager()
         try:
@@ -44,31 +46,11 @@ class TaskServer(object):
         if query_result['success'] >0:
             db.StoreData(task_report['receipt'])
 
-            if query_result['error'] == 0: # all successful
-                print("all successful")
-                task = task_report['task'].copy()
-                task['receipt'] = self._modify_receipt_num(task['receipt'],task['distance'])
-                self.task_queue.put(task)
-            # have error
-            else:
-                origin_task = task_report['task'].copy()
-                task = task_report['task'].copy()
-                task['receipt'] = self._modify_receipt_num(
-                        origin_task['receipt'],
-                        query_result['success']*origin_task['direction']
-                        )
-
-                task['date_guess'] = 1
-                task['date'] = self._modify_date(origin_task['date'],1)
-                self.task_queue.put(task)
-
-
-                task = task_report['task'].copy()
-                task['date_guess'] = -1
-                task['date'] = self._modify_date(origin_task['date'],-1)
-                self.task_queue.put(task)
-
-
+            print("some of them success")
+            task = task_report['task'].copy()
+            task['fail_cnt'] = 0
+            task['receipt'] = self._modify_receipt_num(query_result['lastSuccessReceipt'],task['direction'])
+            self.task_queue.put(task)
 
         # nothing is success(error at first)
         else:
@@ -76,22 +58,24 @@ class TaskServer(object):
                 origin_task = task_report['task'].copy()
                 task = task_report['task'].copy()
                 task['fail_cnt'] += 1
-
                 task['date_guess'] = 1
                 task['date'] = self._modify_date(origin_task['date'],1)
+                task['receipt'] = self._modify_receipt_num( query_result['lastSuccessReceipt'], task['direction'] )
                 self.task_queue.put(task)
 
                 task = task_report['task'].copy()
+                task['fail_cnt'] += 1
                 task['date_guess'] = -1
                 task['date'] = self._modify_date(origin_task['date'],-1)
+                task['receipt'] = self._modify_receipt_num( query_result['lastSuccessReceipt'], task['direction'] )
                 self.task_queue.put(task)
             elif task_report['task']['fail_cnt'] > 5:
+                log.debug( 'a task was terminated due to fail_cnt limit exceed' )
                 return
             else:
                 origin_task = task_report['task'].copy()
                 task = task_report['task'].copy()
                 task['fail_cnt'] += 1
-
                 task['date'] = self._modify_date(origin_task['date'],1*origin_task['date_guess'])
                 self.task_queue.put(task)
 
@@ -107,7 +91,7 @@ class TaskServer(object):
         year, month, day = date.split('/')
         iso_date = datetime.date(int(year)+1911, int(month), int(day))
         iso_date += datetime.timedelta(int(delta))
-        date_return = u"{}/{}/{}".format(iso_date.year-1911,iso_date.month,iso_date.day)
+        date_return = u"{0}/{1:02d}/{2:02d}".format(iso_date.year-1911,iso_date.month,iso_date.day)
         return date_return
 
 
@@ -163,7 +147,7 @@ class TaskServer(object):
                 L.append(self.task_queue.get())
             print L
 
-            #self.taskdbmanager.store_task_list(L)
+            self.taskdbmanager.store_task_list(L)
             print "=====Task Saved====="
 
 if __name__ == '__main__':

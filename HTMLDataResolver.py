@@ -1,4 +1,5 @@
 #!/usr/local/bin/python
+#coding=UTF-8
 import httplib, urllib
 import os
 import time
@@ -6,6 +7,9 @@ import re
 import logging as log
 import sys
 from htmldom import htmldom
+
+reload(sys)
+sys.setdefaultencoding( "utf-8" )
 
 # DB Column names
 colNames =['id','date','com','stat','money','taxid','addr','note']
@@ -27,7 +31,7 @@ class HTMLDataResolver(object):
 
     def __init__(self):
         pass
-
+    
     def parseUTF8(self,instr):
         """ transform the text """
         outstr = ""
@@ -70,6 +74,13 @@ class HTMLDataResolver(object):
 
         items = dom.find("table[class=lpTb] tr td")
         if items.length() is 0:
+
+            if  "密碼錯誤!!請輸入圖形上的密碼" in content:
+                log.error( "圖形密碼錯誤" )
+            elif "全民稽核發票資料查詢異常" in content:
+                log.error( "查詢異常 Sleep 10 sec..." )
+                time.sleep(1)
+                return None
             return None
 
         try:

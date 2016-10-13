@@ -38,35 +38,7 @@ class ImgResolver(object):
         if self.check is None:
             self.check = self.basicCheck
 
-        for dir_p, dirs, files in os.walk(self.s_path):
-            for f in files:
-                f_p = os.path.join(dir_p,f)
-                with open(f_p, "r") as inFd:
-                    content = inFd.read()
-                imgSHA = hash.sha1(content).hexdigest()
-                code = os.path.basename(f).split('.')[0]
-                if self.check(code):
-                    self.mem[imgSHA] = code
-                    log.debug("Load Solved: {}={}".format(imgSHA, code))
-                else:
-                    os.remove(f_p)
-                    log.warn("Remove incorrect file: {}".format(f_p))
 
-        for dir_p, dirs, files in os.walk(self.uns_path):
-            for f in files:
-                with open(os.path.join(dir_p,f), "r") as inFd:
-                    content = inFd.read()
-                imgSHA = hash.sha1(content).hexdigest()
-                code = os.path.basename(f).split('.')[0]
-
-                # if unsolved pics have been updated manually
-                if self.check(code):
-                    t_p = os.path.join(self.s_path, code+".jpeg")
-                    os.rename(os.path.join(dir_p,f), t_p)
-                else:
-                    code = ""
-                self.mem[imgSHA] = code
-                log.debug("Load Unsolved: {}={}".format(imgSHA, code))
 
     def getCode(self, imgSHA):
         """ if exist, return the code; if fail, return \"\"; if not exist, return None"""

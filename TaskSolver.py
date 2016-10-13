@@ -8,11 +8,15 @@ import logging as log
 import sys
 import re
 import thread
+import time
+import requests
+
+
 
 class TaskSolver(object):
     def __init__(self):
         self.tasks = []
-        self.dbmgr = DBManager()
+        self.server = "http://localhost:8000"
         self.c = Connector()
         self.data = ""
         self.receipt_done = dict()
@@ -24,11 +28,8 @@ class TaskSolver(object):
 
         res = None
 
-        errorCount = 10;
 
-        while res is None and errorCount > 0:
-            errorCount -= 1
-            print errorCount
+        while res is None:
             if not self.c.session_valid:
                 del self.c
                 self.c = Connector()
@@ -43,6 +44,8 @@ class TaskSolver(object):
 
             with open("out.html" , "w") as outFd:
                 outFd.write(self.c.body)
+
+
 
         if not self.c.info:
             return False
@@ -76,26 +79,25 @@ class TaskSolver(object):
         current_receipt = start_receipt
         current_receipt_num = int(current_receipt[2:10])
         success_count = 0
-
+        lastSuccessReciept = self._modify_receipt_num( current_receipt, -direction )
 
         while (abs(start_receipt_num - current_receipt_num) < distance):
-
+            log.info("task solving..." + str( abs(start_receipt_num - current_receipt_num) + 1 ) +  '/' + str( distance ))
             success = self.Query(current_receipt, date)
-            print "current " + current_receipt
             if success is True:
                 current_receipt = self._modify_receipt_num(current_receipt,direction)
                 current_receipt_num = int(current_receipt[2:10])
                 success_count += 1
-            elif success is False:
-                break
+                lastSuccessReciept = current_receipt
             else:
-                log.error('main loop unusually break')
-                sys.exit(1)
+                current_receipt = self._modify_receipt_num(current_receipt,direction)
+                current_receipt_num = int(current_receipt[2:10])
 
 
         result = {
                 'success':success_count,
                 'error':distance-success_count,
+                'lastSuccessReceipt': lastSuccessReciept
                 }
         receipt = self.receipt_done
         return_data = {'result':result,'receipt':self.receipt_done,'task':task_dict}
@@ -103,23 +105,39 @@ class TaskSolver(object):
         return return_data
 
     def start_solver(self):
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        server_address = ('127.0.0.1', 5555)
-        print  'connecting to {} '.format(server_address)
-        sock.connect(server_address)
+
         while True:
-            task_str = sock.recv(512)
-            task = json.loads(task_str)
-            if task['action'] == "solve":
-                task_dict = task['task']
-                print "Recieve task : {}".format(task_dict)
-                result = solver.solve_task(task_dict)
-                print "send : \n{}".format(result)
-                sock.sendall(json.dumps(result))
-                print "Task done!!"
-            elif task['action'] == "close":
-                sock.close()
-                break
+
+            task = requests.get(self.server+'/getTask/')
+            print "Recieve task : {}".format ( task.text )
+            time_start = time.time()
+            task_dict = json.loads( task.text )
+
+            if task_dict['result'] == 'error':
+                print 'Server currently down or no tasks, wait 10 secs'
+                time.sleep( 10 )
+                continue
+        
+
+            result = solver.solve_task(task_dict)
+
+            time_delta = time.time() - time_start
+            result['result']['time'] = time_delta
+
+            log.info( "\n=====================statistics===================\n" )
+            receiptHasdata = result['result']['success']
+            receiptFailed = result['result']['error']
+            log.info( "receipt / s : {}\n".format( task_dict['distance']/time_delta ) )
+            log.info( "average time consume for each receipt : {}s\n".format( time_delta/task_dict['distance'] ) )
+            log.info( "hit rate ( receipt has data / total receipt ) : {}%\n".format( receiptHasdata / task_dict['distance']  * 100) )
+            log.info( "correct receipt / sec : {}\n".format( receiptHasdata/time_delta ) )
+            log.info( "missing rate : {}%\n".format( receiptFailed/task_dict['distance'] ) )
+            log.info( "\n==================================================\n" )
+
+            log.debug( "send : \n{}".format(result) )
+            requests.post(self.server+'/reportTask/', data=json.dumps( result ))
+
+
 
 
 if __name__ == '__main__':
