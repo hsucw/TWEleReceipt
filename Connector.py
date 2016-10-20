@@ -3,6 +3,7 @@ import httplib
 import urllib
 import logging as log
 import sys
+import time
 import os
 
 from ImgResolver import ImgResolver
@@ -57,7 +58,8 @@ class Connector(object):
             try:
                 self.res = self.conn.getresponse()
             except httplib.ResponseNotReady:
-                print "retry"
+                log.debug ("retry after 3 seconds...")
+                time.sleep( 3 )
                 continue
             else:
                 break
@@ -99,6 +101,7 @@ class Connector(object):
                 self.res = self.conn.getresponse()
             except (httplib.ResponseNotReady ,httplib.BadStatusLine):
                 log.info("retry")
+                time.sleep( 3 )
                 continue
             else:
                 break
@@ -134,15 +137,15 @@ class Connector(object):
 
             if self.htmlRslr.findDetail(self.body):
                 randNo = guess_list[guess_index]
-                print("\nRandom Number Found "+randNo)
+                log.debug("\nRandom Number Found "+randNo)
                 break
 
             if guess_index < list_len:
-                print "\rtrying rand no {}, total {}/{}".format(guess_list[guess_index],guess_index+1,list_len),
+                log.debug( "\rtrying rand no {}, total {}/{}".format(guess_list[guess_index],guess_index+1,list_len) )
 
                 guess_index += 1
             else:
-                print("\nRandom Number Not Found")
+                log.debug("\nRandom Number Not Found")
                 break
 
 
@@ -152,7 +155,7 @@ if __name__ == '__main__':
     log.basicConfig(level=log.INFO)
 
     if len(sys.argv) != 3:
-        print("Usage: python Connector.py [RECEIPT_ID] [DATE(YYYY/MM/DD)]")
+        log.info("Usage: python Connector.py [RECEIPT_ID] [DATE(YYYY/MM/DD)]")
         log.error("Unknown input")
         sys.exit(1)
 
@@ -181,13 +184,15 @@ if __name__ == '__main__':
 
 
     if not bool(c.info):
-        print "No Record"
-    print("===[Query Result]===")
+        log.debug( "No Record" )
+    log.info("===[Query Result]===")
     for k, r in c.info.iteritems():
-        print k+":\t\t"+r
+        log.info( k+":\t\t"+r )
 
     guessRandNo = raw_input("Info found, will you like to guess the random number? [Y/N]:")
     if guessRandNo.lower() == 'y':
         c.guessRandNo()
     else:
-        print("Bye")
+        log.info("Bye")
+
+

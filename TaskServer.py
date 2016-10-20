@@ -31,22 +31,21 @@ class TaskServer(object):
         try:
             action = {"action":"solve","task":task_dict}
             clientsock.sendall(json.dumps(action))
-            print "task send {}".format(task_dict)
+            log.info( "task send {}".format(task_dict) )
 
 
             task_report_json = clientsock.recv(65536)
         except socket.error as e:
-            print "shit happened {}".format(e)
+            log.error( "shit happened {}".format(e) )
             time.sleep(60)
 
         task_report = json.loads(task_report_json)
-        print task_report
+        log.debug( task_report )
         query_result = task_report['result']
         # some is success
         if query_result['success'] >0:
             db.StoreData(task_report['receipt'])
 
-            print("some of them success")
             task = task_report['task'].copy()
             task['fail_cnt'] = 0
             task['receipt'] = self._modify_receipt_num(query_result['lastSuccessReceipt'],task['direction'])
@@ -104,7 +103,7 @@ class TaskServer(object):
             self.send_and_receive(task, clientsock)
 
         clientsock.sendall(json.dumps({"action":"close"}))
-        print("task is empty")
+        log.info("task is empty")
 
     def check_task_db(self):
         task_db = TaskDBManager()
@@ -124,7 +123,7 @@ class TaskServer(object):
             time.sleep(60)
 
     def run(self):
-        print 'Server Start'
+        log.info( 'Server Start' )
         thread.start_new_thread(self.check_task_db,() )
         try:
 
@@ -133,9 +132,9 @@ class TaskServer(object):
             serversock.bind(server_addr)
             serversock.listen(5)
             while 1:
-                print 'waiting for connection...'
+                log.info( 'waiting for connection...')
                 clientsock, addr = serversock.accept()
-                print '...connected from:', addr
+                log.info( '...connected from:', addr )
 
                 thread.start_new_thread(self.task_manager, (clientsock,) )
         except KeyboardInterrupt:
@@ -145,10 +144,10 @@ class TaskServer(object):
                 L.append(self.current.get())
             while not self.task_queue.empty():
                 L.append(self.task_queue.get())
-            print L
+            log.info( L )
 
             self.taskdbmanager.store_task_list(L)
-            print "=====Task Saved====="
+            log.info( "=====Task Saved=====" )
 
 if __name__ == '__main__':
     # log.basicConfig(level = log.DEBUG)

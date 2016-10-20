@@ -17,6 +17,15 @@ colNames =['id','date','com','stat','money','taxid','addr','note']
 # A Chinese string for "Record Not Found"
 no_data_rec_str = '\xe6\x9f\xa5\xe7\x84\xa1\xe7\x99\xbc\xe7\xa5\xa8\xe9\x96\x8b\xe7\xab\x8b\xe8\xb3\x87\xe6\x96\x99'
 
+
+# A Chinese string for password error of image
+password_error_str = '\xe5\xaf\x86\xe7\xa2\xbc\xe9\x8c\xaf\xe8\xaa\xa4!!\xe8\xab\x8b\xe8\xbc\xb8\xe5\x85\xa5\xe5\x9c\x96\xe5\xbd\xa2\xe4\xb8\x8a\xe7\x9a\x84\xe5\xaf\x86\xe7\xa2\xbc'
+password_error_msg = '\xe5\x9c\x96\xe5\xbd\xa2\xe5\xaf\x86\xe7\xa2\xbc\xe9\x8c\xaf\xe8\xaa\xa4'
+
+# A Chinese string for query error
+query_receipt_data_error_str = '\xe5\x85\xa8\xe6\xb0\x91\xe7\xa8\xbd\xe6\xa0\xb8\xe7\x99\xbc\xe7\xa5\xa8\xe8\xb3\x87\xe6\x96\x99\xe6\x9f\xa5\xe8\xa9\xa2\xe7\x95\xb0\xe5\xb8\xb8'
+query_unknown_error = '\xe6\x9f\xa5\xe8\xa9\xa2\xe7\x95\xb0\xe5\xb8\xb8 Sleep 10 sec...'
+
 class NoRecord(Exception):
     """ Query Success, but no Data """
     pass
@@ -75,10 +84,10 @@ class HTMLDataResolver(object):
         items = dom.find("table[class=lpTb] tr td")
         if items.length() is 0:
 
-            if  "密碼錯誤!!請輸入圖形上的密碼" in content:
-                log.error( "圖形密碼錯誤" )
-            elif "全民稽核發票資料查詢異常" in content:
-                log.error( "查詢異常 Sleep 10 sec..." )
+            if  password_error_str in content:
+                log.error( password_error_msg )
+            elif query_receipt_data_error_str in content:
+                log.error( query_unknown_error )
                 time.sleep(1)
                 return None
             return None

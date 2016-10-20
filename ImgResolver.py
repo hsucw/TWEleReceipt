@@ -114,8 +114,8 @@ class ImgResolver(object):
 
         imgCode = os.popen("tesseract -l eng {} stdout 2>/dev/null"\
                 .format(self.tmp_file)).readline()[0:-1]
-        #log.info("Guess Ratio:{}/{}={}%".format(self.guess_hit+1, self.guess_total, \
-        #        ((self.guess_hit+1)*100/(self.guess_total))))
+        log.debug("Guess Ratio:{}/{}={}%".format(self.guess_hit+1, self.guess_total, \
+                ((self.guess_hit+1)*100/(self.guess_total))))
         return imgCode
 
     def basicCheck(self, imgCode):
