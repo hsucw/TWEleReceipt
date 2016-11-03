@@ -9,6 +9,8 @@ import re
 import random
 from PIL import Image, ImageEnhance
 
+
+
 class ImgResolver(object):
 
     def __init__(self,up='./pic/unsolved',sp='./pic/solved'):
@@ -69,7 +71,7 @@ class ImgResolver(object):
     def learn(self, imgSHA, imgCode, correct):
 
         #print imgSHA, imgCode, correct
-
+        '''
         if self.tmp_file is "":
             return
 
@@ -85,6 +87,9 @@ class ImgResolver(object):
             log.error(details)
 
         self.mem[imgSHA]=imgCode
+        '''
+
+        return
 
     def tesseract(self, img):
 
@@ -116,6 +121,10 @@ class ImgResolver(object):
                 .format(self.tmp_file)).readline()[0:-1]
         log.debug("Guess Ratio:{}/{}={}%".format(self.guess_hit+1, self.guess_total, \
                 ((self.guess_hit+1)*100/(self.guess_total))))
+
+        os.remove( self.tmp_file )
+
+
         return imgCode
 
     def basicCheck(self, imgCode):
@@ -125,6 +134,7 @@ class ImgResolver(object):
             return True
 
     def resolveImg(self, img):
+
         # retry
         imgCode = ""
         imgSHA = hash.sha1(img).hexdigest()
@@ -152,6 +162,9 @@ class ImgResolver(object):
             res = True
 
         self.learn(imgSHA,imgCode,res)
+
+
+
         return imgCode, imgSHA
 
 if __name__ == "__main__":

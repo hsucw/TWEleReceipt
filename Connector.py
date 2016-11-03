@@ -9,9 +9,6 @@ import os
 from ImgResolver import ImgResolver
 from HTMLDataResolver import HTMLDataResolver
 
-log.basicConfig(level=log.INFO)
-
-
 class Connector(object):
     def __init__(self, domain="www.einvoice.nat.gov.tw"):
         self.domain = domain
@@ -78,6 +75,8 @@ class Connector(object):
 
         while self.imgCode is "":
             self.getPath(self.imgPath)
+
+            time.sleep( 3 )
             self.imgCode, self.imgSHA = self.imgRslr.resolveImg(self.body)
         return self.imgCode
 

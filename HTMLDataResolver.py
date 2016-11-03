@@ -9,7 +9,9 @@ import sys
 from htmldom import htmldom
 
 reload(sys)
+
 sys.setdefaultencoding( "utf-8" )
+
 
 # DB Column names
 colNames =['id','date','com','stat','money','taxid','addr','note']

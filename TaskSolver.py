@@ -1,22 +1,21 @@
 from Connector import Connector
-from DBManager import DBManager
-from TimeConvert import TimeConvert
-
 import socket
 import json
 import logging as log
 import sys
+
 import re
 import thread
 import time
 import requests
 
-
+DEBUG_LEVEL = log.DEBUG
 
 class TaskSolver(object):
     def __init__(self):
         self.tasks = []
         self.server = "http://localhost:8000"
+        self.getTaskUrl = "/api/getTask/"
         self.c = Connector()
         self.data = ""
         self.receipt_done = dict()
@@ -108,13 +107,13 @@ class TaskSolver(object):
 
         while True:
 
-            task = requests.get(self.server+'/getTask/')
-            print "Recieve task : {}".format ( task.text )
+            task = requests.get(self.server+self.getTaskUrl)
+            log.debug( "Recieve task : {}".format ( task.text ) )
             time_start = time.time()
             task_dict = json.loads( task.text )
 
             if task_dict['result'] == 'error':
-                print 'Server currently down or no tasks, wait 10 secs'
+                log.error( 'Server currently down or no tasks, wait 10 secs' )
                 time.sleep( 10 )
                 continue
         
@@ -135,14 +134,41 @@ class TaskSolver(object):
             log.info( "\n==================================================\n" )
 
             log.debug( "send : \n{}".format(result) )
-            requests.post(self.server+'/reportTask/', data=json.dumps( result ))
+            requests.post(self.server+'/api/reportTask/', data=json.dumps( result ))
 
 
 
 
 if __name__ == '__main__':
-    """ give a guess for id & date"""
-    log.basicConfig(level=log.INFO)
+
+
+    debugLevel = 'INFO'
+
+    for argv in sys.argv:
+        if argv[:5] == '--log':
+            debugLevel = argv[5:]
+
+    debugLevel = debugLevel.lower()
+
+    if debugLevel == 'warn':
+        DEBUG_LEVEL = log.WARN
+    elif debugLevel == 'debug':
+        DEBUG_LEVEL = log.DEBUG
+    elif debugLevel == 'info':
+        DEBUG_LEVEL = log.INFO
+    elif debugLevel == 'error':
+        DEBUG_LEVEL = log.ERROR
+
+    if DEBUG_LEVEL == log.INFO:
+        print ( "DEBUG LEVEL: INFO" )
+    elif DEBUG_LEVEL == log.WARN:
+        print ( "DEBUG LEVEL: WARN" )
+    elif DEBUG_LEVEL == log.DEBUG:
+        print ("DEBUG LEVEL: DEBUG")
+    elif DEBUG_LEVEL == log.ERROR:
+        print ("DEBUG LEVEL: ERROR")
+
+    log.basicConfig(level=DEBUG_LEVEL)
     solver = TaskSolver()
     solver.start_solver()
     # solver.solve_task({'receipt':'KA13455018','date':'105/08/14','direction':1,'distance':100})
