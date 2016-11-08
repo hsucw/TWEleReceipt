@@ -6,7 +6,10 @@ import sys
 import hashlib as hash
 import errno
 import re
+import random
 from PIL import Image, ImageEnhance
+
+
 
 class ImgResolver(object):
 
@@ -37,35 +40,7 @@ class ImgResolver(object):
         if self.check is None:
             self.check = self.basicCheck
 
-        for dir_p, dirs, files in os.walk(self.s_path):
-            for f in files:
-                f_p = os.path.join(dir_p,f)
-                with open(f_p, "r") as inFd:
-                    content = inFd.read()
-                imgSHA = hash.sha1(content).hexdigest()
-                code = os.path.basename(f).split('.')[0]
-                if self.check(code):
-                    self.mem[imgSHA] = code
-                    log.debug("Load Solved: {}={}".format(imgSHA, code))
-                else:
-                    os.remove(f_p)
-                    log.warn("Remove incorrect file: {}".format(f_p))
 
-        for dir_p, dirs, files in os.walk(self.uns_path):
-            for f in files:
-                with open(os.path.join(dir_p,f), "r") as inFd:
-                    content = inFd.read()
-                imgSHA = hash.sha1(content).hexdigest()
-                code = os.path.basename(f).split('.')[0]
-
-                # if unsolved pics have been updated manually
-                if self.check(code):
-                    t_p = os.path.join(self.s_path, code+".jpeg")
-                    os.rename(os.path.join(dir_p,f), t_p)
-                else:
-                    code = ""
-                self.mem[imgSHA] = code
-                log.debug("Load Unsolved: {}={}".format(imgSHA, code))
 
     def getCode(self, imgSHA):
         """ if exist, return the code; if fail, return \"\"; if not exist, return None"""
@@ -94,6 +69,9 @@ class ImgResolver(object):
         log.debug("Report Fail:{}".format(imgCode))
 
     def learn(self, imgSHA, imgCode, correct):
+
+        #print imgSHA, imgCode, correct
+        '''
         if self.tmp_file is "":
             return
 
@@ -109,11 +87,17 @@ class ImgResolver(object):
             log.error(details)
 
         self.mem[imgSHA]=imgCode
+        '''
+
+        return
 
     def tesseract(self, img):
 
         # keep the data
-        self.tmp_file = "tmp_"+int(time.time()).__str__()+".jpeg"
+        fileName = "tmp_"+int(time.time()+random.randint(1,99999)).__str__()+".jpeg"
+        while os.path.exists( fileName ):
+            fileName = "tmp_"+int(time.time()+random.randint(1,99999)).__str__()+".jpeg"
+        self.tmp_file = fileName
         with open(self.tmp_file, "w") as oFd:
             oFd.write(img)
         
@@ -132,12 +116,15 @@ class ImgResolver(object):
         im.save(self.tmp_file)
 
         # use tesseract
-        
 
         imgCode = os.popen("tesseract -l eng {} stdout 2>/dev/null"\
                 .format(self.tmp_file)).readline()[0:-1]
-        log.info("Guess Ratio:{}/{}={}%".format(self.guess_hit+1, self.guess_total, \
+        log.debug("Guess Ratio:{}/{}={}%".format(self.guess_hit+1, self.guess_total, \
                 ((self.guess_hit+1)*100/(self.guess_total))))
+
+        os.remove( self.tmp_file )
+
+
         return imgCode
 
     def basicCheck(self, imgCode):
@@ -147,6 +134,7 @@ class ImgResolver(object):
             return True
 
     def resolveImg(self, img):
+
         # retry
         imgCode = ""
         imgSHA = hash.sha1(img).hexdigest()
@@ -174,6 +162,9 @@ class ImgResolver(object):
             res = True
 
         self.learn(imgSHA,imgCode,res)
+
+
+
         return imgCode, imgSHA
 
 if __name__ == "__main__":

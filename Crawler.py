@@ -10,6 +10,7 @@ import sys
 import re
 import thread
 
+
 class Crawler(object):
     def __init__(self):
         self.tasks = []

@@ -1,18 +1,21 @@
 from Connector import Connector
-from DBManager import DBManager
-from TimeConvert import TimeConvert
-
 import socket
 import json
 import logging as log
 import sys
+
 import re
 import thread
+import time
+import requests
+
+DEBUG_LEVEL = log.DEBUG
 
 class TaskSolver(object):
     def __init__(self):
         self.tasks = []
-        self.dbmgr = DBManager()
+        self.server = "http://localhost:8000"
+        self.getTaskUrl = "/api/getTask/"
         self.c = Connector()
         self.data = ""
         self.receipt_done = dict()
@@ -23,22 +26,25 @@ class TaskSolver(object):
     def Query(self, receipt, receipt_date):
 
         res = None
-        while res is None:
 
+
+        while res is None:
             if not self.c.session_valid:
                 del self.c
                 self.c = Connector()
-                #self.c.imgRslr.reportFail(self.c.imgCode, self.c.imgSHA)
+                self.c.imgRslr.reportFail(self.c.imgCode, self.c.imgSHA)
                 self.c.resolveImg()
-            log.info('[{}]Get Image {}:{}'.format(self.c.res.reason, self.c.tmp_file, self.c.imgCode))
-            log.info('{} and {}'.format(receipt , receipt_date))
+            #log.info('[{}]Get Image {}:{}'.format(self.c.res.reason, self.c.tmp_file, self.c.imgCode))
+            #log.info('{} and {}'.format(receipt , receipt_date))
             self.c.setPostData(receipt, receipt_date )
             self.c.postForm( self.c.postPath )
-            log.info('[{} {}]Post data'.format(self.c.res.status,self.c.res.reason))
+            #log.info('[{} {}]Post data'.format(self.c.res.status,self.c.res.reason))
             res = self.c.getInfo()
 
             with open("out.html" , "w") as outFd:
                 outFd.write(self.c.body)
+
+
 
         if not self.c.info:
             return False
@@ -59,6 +65,9 @@ class TaskSolver(object):
         return receipt_eng+str(receipt_num)
 
     def solve_task(self, task_dict):
+
+        self.receipt_done = {}
+
         distance = task_dict['distance']
         date = task_dict['date']
         direction = task_dict['direction']
@@ -69,23 +78,25 @@ class TaskSolver(object):
         current_receipt = start_receipt
         current_receipt_num = int(current_receipt[2:10])
         success_count = 0
-
+        lastSuccessReciept = self._modify_receipt_num( current_receipt, -direction )
 
         while (abs(start_receipt_num - current_receipt_num) < distance):
+            log.info("task solving..." + str( abs(start_receipt_num - current_receipt_num) + 1 ) +  '/' + str( distance ))
             success = self.Query(current_receipt, date)
             if success is True:
                 current_receipt = self._modify_receipt_num(current_receipt,direction)
                 current_receipt_num = int(current_receipt[2:10])
                 success_count += 1
-            elif success is False:
-                break
+                lastSuccessReciept = current_receipt
             else:
-                log.error('main loop unusually break')
-                sys.exit(1)
+                current_receipt = self._modify_receipt_num(current_receipt,direction)
+                current_receipt_num = int(current_receipt[2:10])
+
 
         result = {
                 'success':success_count,
                 'error':distance-success_count,
+                'lastSuccessReceipt': lastSuccessReciept
                 }
         receipt = self.receipt_done
         return_data = {'result':result,'receipt':self.receipt_done,'task':task_dict}
@@ -93,28 +104,71 @@ class TaskSolver(object):
         return return_data
 
     def start_solver(self):
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        server_address = ('127.0.0.1', 5555)
-        print  'connecting to {} '.format(server_address)
-        sock.connect(server_address)
+
         while True:
-            task_str = sock.recv(512)
-            task = json.loads(task_str)
-            if task['action'] == "solve":
-                task_dict = task['task']
-                print "Recieve task : {}".format(task_dict)
-                result = solver.solve_task(task_dict)
-                print "send : \n{}".format(result)
-                sock.sendall(json.dumps(result))
-                print "Task done!!"
-            elif task['action'] == "close":
-                sock.close()
-                break
+
+            task = requests.get(self.server+self.getTaskUrl)
+            log.debug( "Recieve task : {}".format ( task.text ) )
+            time_start = time.time()
+            task_dict = json.loads( task.text )
+
+            if task_dict['result'] == 'error':
+                log.error( 'Server currently down or no tasks, wait 10 secs' )
+                time.sleep( 10 )
+                continue
+        
+
+            result = solver.solve_task(task_dict)
+
+            time_delta = time.time() - time_start
+            result['result']['time'] = time_delta
+
+            log.info( "\n=====================statistics===================\n" )
+            receiptHasdata = result['result']['success']
+            receiptFailed = result['result']['error']
+            log.info( "receipt / s : {}\n".format( task_dict['distance']/time_delta ) )
+            log.info( "average time consume for each receipt : {}s\n".format( time_delta/task_dict['distance'] ) )
+            log.info( "hit rate ( receipt has data / total receipt ) : {}%\n".format( receiptHasdata / task_dict['distance']  * 100) )
+            log.info( "correct receipt / sec : {}\n".format( receiptHasdata/time_delta ) )
+            log.info( "missing rate : {}%\n".format( receiptFailed/task_dict['distance'] ) )
+            log.info( "\n==================================================\n" )
+
+            log.debug( "send : \n{}".format(result) )
+            requests.post(self.server+'/api/reportTask/', data=json.dumps( result ))
+
+
 
 
 if __name__ == '__main__':
-    """ give a guess for id & date"""
-    log.basicConfig(level=log.INFO)
+
+
+    debugLevel = 'INFO'
+
+    for argv in sys.argv:
+        if argv[:5] == '--log':
+            debugLevel = argv[5:]
+
+    debugLevel = debugLevel.lower()
+
+    if debugLevel == 'warn':
+        DEBUG_LEVEL = log.WARN
+    elif debugLevel == 'debug':
+        DEBUG_LEVEL = log.DEBUG
+    elif debugLevel == 'info':
+        DEBUG_LEVEL = log.INFO
+    elif debugLevel == 'error':
+        DEBUG_LEVEL = log.ERROR
+
+    if DEBUG_LEVEL == log.INFO:
+        print ( "DEBUG LEVEL: INFO" )
+    elif DEBUG_LEVEL == log.WARN:
+        print ( "DEBUG LEVEL: WARN" )
+    elif DEBUG_LEVEL == log.DEBUG:
+        print ("DEBUG LEVEL: DEBUG")
+    elif DEBUG_LEVEL == log.ERROR:
+        print ("DEBUG LEVEL: ERROR")
+
+    log.basicConfig(level=DEBUG_LEVEL)
     solver = TaskSolver()
     solver.start_solver()
     # solver.solve_task({'receipt':'KA13455018','date':'105/08/14','direction':1,'distance':100})
