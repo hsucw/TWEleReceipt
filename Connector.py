@@ -9,6 +9,16 @@ import os
 from ImgResolver import ImgResolver
 from HTMLDataResolver import HTMLDataResolver
 
+def progress(count, total, suffix=''):
+    bar_len = 60
+    filled_len = int(round(bar_len * count / float(total)))
+
+    percents = round(100.0 * count / float(total), 1)
+    bar = '=' * filled_len + '-' * (bar_len - filled_len)
+
+    sys.stdout.write('[%s] %s%s ...%s\r' % (bar, percents, '%', suffix))
+    sys.stdout.flush()  # As suggested by Rom Ruben
+
 class Connector(object):
     def __init__(self, domain="www.einvoice.nat.gov.tw"):
         self.domain = domain
@@ -50,7 +60,13 @@ class Connector(object):
 
         self.setReqHeader()
         log.debug("GET:{} with {}".format(path, self.headers))
-        self.conn.request("GET", path, headers=self.headers)
+
+        try:
+            self.conn.request("GET", path, headers=self.headers)
+        except Exception as e:
+            log.error("{0} : {2}".format( type(e).__name__, e.strerror))
+            exit(1)
+
         while True:
             try:
                 self.res = self.conn.getresponse()
@@ -93,7 +109,11 @@ class Connector(object):
         params = urllib.urlencode(self.postData)
 
         self.setReqHeader()
-        self.conn.request("POST", path, params, headers=self.headers)
+        try:
+            self.conn.request("POST", path, params, headers=self.headers)
+        except Exception as e:
+            log.error("{0} : {2}".format( type(e).__name__, e.strerror))
+            exit(1)
         log.debug("POST:{} {} with {}".format(path, params, self.headers))
         while True:
             try:
@@ -116,6 +136,8 @@ class Connector(object):
         else:
             self.session_valid = True
         return self.info
+
+
 
     def guessRandNo(self):
         import json
@@ -141,6 +163,9 @@ class Connector(object):
 
             if guess_index < list_len:
                 log.debug( "\rtrying rand no {}, total {}/{}".format(guess_list[guess_index],guess_index+1,list_len) )
+
+                if guess_index % 10 == 0:
+                    progress(guess_index, 9999)
 
                 guess_index += 1
             else:
