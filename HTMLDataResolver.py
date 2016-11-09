@@ -42,7 +42,7 @@ class HTMLDataResolver(object):
 
     def __init__(self):
         pass
-    
+
     def parseUTF8(self,instr):
         """ transform the text """
         outstr = ""
@@ -87,10 +87,10 @@ class HTMLDataResolver(object):
         if items.length() is 0:
 
             if  password_error_str in content:
-                log.error( password_error_msg )
+                log.warn( password_error_msg )
             elif query_receipt_data_error_str in content:
-                log.error( query_unknown_error )
-                time.sleep(1)
+                log.warn( query_unknown_error )
+                #time.sleep(1)
                 return None
             return None
 

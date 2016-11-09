@@ -13,50 +13,19 @@ from PIL import Image, ImageEnhance
 
 class ImgResolver(object):
 
-    def __init__(self,up='./pic/unsolved',sp='./pic/solved'):
-        self.uns_path = up
-        self.s_path = sp
-        self.mem = {}
+    def __init__(self):
         self.guess_total = 0
         self.guess_hit = 0
         self.algo = ["tesseract"]
         self.check = None
         self.tmp_file = ""
 
-        try:
-            os.makedirs(self.uns_path)
-            os.makedirs(self.s_path)
-        except OSError as e:
-            if e.errno == errno.EEXIST:
-                pass
-            else:
-                log.error("Unknown OSError")
-        else:
-            log.error("Cannot Create Folders for Learning")
-
-    def loadPics(self):
-        content = None
-
-        if self.check is None:
-            self.check = self.basicCheck
-
-
-
-    def getCode(self, imgSHA):
-        """ if exist, return the code; if fail, return \"\"; if not exist, return None"""
-        if self.mem.has_key(imgSHA):
-            log.info("Get Code from my memory: {}".format(self.mem[imgSHA]))
-            return self.mem[imgSHA]
-        else:
-            return None
 
     def reportFail(self, imgCode, imgSHA):
 
         if imgCode == "":
             return
 
-        tmp_file = os.path.join(self.s_path, imgCode+".jpeg")
-        t_p = os.path.join(self.uns_path, imgSHA+".jpeg")
         self.guess_hit -= 1
         try:
             os.rename(tmp_file, t_p)
@@ -68,29 +37,6 @@ class ImgResolver(object):
             log.error("No such key {} in imgCode mem".format(imgSHA))
         log.debug("Report Fail:{}".format(imgCode))
 
-    def learn(self, imgSHA, imgCode, correct):
-
-        #print imgSHA, imgCode, correct
-        '''
-        if self.tmp_file is "":
-            return
-
-        if correct:
-            t_p = os.path.join(self.s_path, imgCode+".jpeg")
-        else:
-            t_p = os.path.join(self.uns_path, imgSHA+".jpeg")
-        log.debug("copy file to {}".format(t_p))
-        try:
-            os.rename(self.tmp_file, t_p)
-        except Exception as details:
-            log.error("learn failed:{}".format(t_p))
-            log.error(details)
-
-        self.mem[imgSHA]=imgCode
-        '''
-
-        return
-
     def tesseract(self, img):
 
         # keep the data
@@ -100,7 +46,7 @@ class ImgResolver(object):
         self.tmp_file = fileName
         with open(self.tmp_file, "w") as oFd:
             oFd.write(img)
-        
+
         # resolve noise
         im = Image.open(self.tmp_file)
         enhancer = ImageEnhance.Color(im)
@@ -135,14 +81,7 @@ class ImgResolver(object):
 
     def resolveImg(self, img):
 
-        # retry
-        imgCode = ""
-        imgSHA = hash.sha1(img).hexdigest()
-        imgCode = self.getCode(imgSHA)
-
-        if imgCode is not None:
-            return imgCode
-
+        imgCode=""
         if self.check is None:
             self.check = self.basicCheck
 
@@ -155,23 +94,24 @@ class ImgResolver(object):
 
         # check
         if not self.check(imgCode):
+            log.debug("Basic Check Fail")
             res = False
             imgCode = ""
         else:
+            log.debug("Resolve Success")
             self.guess_hit += 1
             res = True
 
-        self.learn(imgSHA,imgCode,res)
+        #self.learn(imgSHA,imgCode,res)
 
 
 
-        return imgCode, imgSHA
+        return imgCode
 
 if __name__ == "__main__":
     log.basicConfig(level=log.INFO)
 
     r = ImgResolver()
-    r.loadPics()
     with open(sys.argv[1], "r") as inFd:
         img = inFd.read()
 

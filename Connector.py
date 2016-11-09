@@ -5,6 +5,7 @@ import logging as log
 import sys
 import time
 import os
+import thread
 
 from ImgResolver import ImgResolver
 from HTMLDataResolver import HTMLDataResolver
@@ -16,7 +17,7 @@ def progress(count, total, suffix=''):
     percents = round(100.0 * count / float(total), 1)
     bar = '=' * filled_len + '-' * (bar_len - filled_len)
 
-    sys.stdout.write('[%s] %s%s ...%s\r' % (bar, percents, '%', suffix))
+    sys.stdout.write('[%s] %s%s ...%s (%s/%s)\r' % (bar, percents, '%', suffix, count, total))
     sys.stdout.flush()  # As suggested by Rom Ruben
 
 class Connector(object):
@@ -28,11 +29,9 @@ class Connector(object):
         self.guess_hit = 0
 
         self.imgCode = ""
-        self.imgSHA = ""
         self.tmp_file = ""
 
         self.imgRslr = ImgResolver()
-        self.imgRslr.loadPics()
         self.htmlRslr = HTMLDataResolver()
         self.cookie_str = ""
 
@@ -54,6 +53,7 @@ class Connector(object):
         self.headers['Cookie'] = self.cookie_str
 
     def getPath(self, path="/"):
+        log.debug('GET URL :{}'.format(path))
         self.conn = httplib.HTTPSConnection(self.domain)
         if self.conn is None:
             raise Exception
@@ -71,8 +71,8 @@ class Connector(object):
             try:
                 self.res = self.conn.getresponse()
             except httplib.ResponseNotReady:
-                log.debug ("retry after 3 seconds...")
-                time.sleep( 3 )
+                log.info ("retry after 3 seconds...")
+                time.sleep( 0.1 )
                 continue
             else:
                 break
@@ -84,6 +84,7 @@ class Connector(object):
                 break
 
         self.body = self.res.read()
+        log.debug('[{}]:{}'.format(self.res.status, self.res.reason))
         return self.res.status
 
     def resolveImg(self):
@@ -91,9 +92,8 @@ class Connector(object):
 
         while self.imgCode is "":
             self.getPath(self.imgPath)
-
-            time.sleep( 3 )
-            self.imgCode, self.imgSHA = self.imgRslr.resolveImg(self.body)
+            #time.sleep( 3 )
+            self.imgCode= self.imgRslr.resolveImg(self.body)
         return self.imgCode
 
     def setPostData(self, num, date):
@@ -120,7 +120,7 @@ class Connector(object):
                 self.res = self.conn.getresponse()
             except (httplib.ResponseNotReady ,httplib.BadStatusLine):
                 log.info("retry")
-                time.sleep( 3 )
+                time.sleep( 0.1 )
                 continue
             else:
                 break
@@ -150,8 +150,9 @@ class Connector(object):
         while randNo is None:
 
             if not self.session_valid:
-                self.imgRslr.reportFail(self.imgCode, self.imgSHA)
+                #self.imgRslr.reportFail(self.imgCode, self.imgSHA)
                 self.resolveImg()
+                log.info("Session invalid")
 
             self.postData['publicAuditVO.randomNumber'] = guess_list[guess_index]
             self.postForm( self.postPath )
@@ -163,10 +164,7 @@ class Connector(object):
 
             if guess_index < list_len:
                 log.debug( "\rtrying rand no {}, total {}/{}".format(guess_list[guess_index],guess_index+1,list_len) )
-
-                if guess_index % 10 == 0:
-                    progress(guess_index, 9999)
-
+                progress(guess_index, 9999)
                 guess_index += 1
             else:
                 log.debug("\nRandom Number Not Found")
@@ -191,10 +189,10 @@ if __name__ == '__main__':
 
     res = None
     while res is None:
-
-        c.imgRslr.reportFail(c.imgCode, c.imgSHA)
+        log.info("Get New Image")
+        #c.imgRslr.reportFail(c.imgCode, c.imgSHA)
         c.resolveImg()
-        log.info('[{}]Get Image {}:{}'.format(c.res.reason, c.tmp_file, c.imgCode))
+        log.info("Resolve Image:{}".format(c.imgCode))
         c.setPostData(rec_id, rec_date)
         c.postForm(c.postPath)
         log.info('[{} {}]Post data'.format(c.res.status, c.res.reason))
@@ -211,7 +209,7 @@ if __name__ == '__main__':
         log.debug( "No Record" )
     log.info("===[Query Result]===")
     for k, r in c.info.iteritems():
-        log.info( k+":\t\t"+r )
+        log.info( "{:>16}".format(k)+":\t"+"{:<20}".format(r) )
 
     guessRandNo = raw_input("Info found, will you like to guess the random number? [Y/N]:")
     if guessRandNo.lower() == 'y':
