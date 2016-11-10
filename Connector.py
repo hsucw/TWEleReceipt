@@ -72,7 +72,7 @@ class Connector(object):
                 self.res = self.conn.getresponse()
             except httplib.ResponseNotReady:
                 log.info ("retry after 3 seconds...")
-                time.sleep( 0.1 )
+                time.sleep( 1 )
                 continue
             else:
                 break
@@ -120,7 +120,7 @@ class Connector(object):
                 self.res = self.conn.getresponse()
             except (httplib.ResponseNotReady ,httplib.BadStatusLine):
                 log.info("retry")
-                time.sleep( 0.1 )
+                time.sleep( 1 )
                 continue
             else:
                 break
@@ -159,7 +159,7 @@ class Connector(object):
 
             if self.htmlRslr.findDetail(self.body):
                 randNo = guess_list[guess_index]
-                log.debug("\nRandom Number Found "+randNo)
+                log.info("\nRandom Number Found:"+randNo)
                 break
 
             if guess_index < list_len:

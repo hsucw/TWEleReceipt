@@ -21,21 +21,6 @@ class ImgResolver(object):
         self.tmp_file = ""
 
 
-    def reportFail(self, imgCode, imgSHA):
-
-        if imgCode == "":
-            return
-
-        self.guess_hit -= 1
-        try:
-            os.rename(tmp_file, t_p)
-        except:
-            log.error("Rename file error: {} -> {}".format(tmp_file, t_p))
-        try:
-            self.mem[imgSHA]=""
-        except KeyError:
-            log.error("No such key {} in imgCode mem".format(imgSHA))
-        log.debug("Report Fail:{}".format(imgCode))
 
     def tesseract(self, img):
 
