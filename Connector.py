@@ -136,11 +136,11 @@ class Connector(object):
 
             if self.htmlRslr.findDetail(self.body):
                 randNo = guess_list[guess_index]
-                log.debug("\nRandom Number Found "+randNo)
+                log.info("\nRandom Number Found "+randNo)
                 break
 
             if guess_index < list_len:
-                log.debug( "\rtrying rand no {}, total {}/{}".format(guess_list[guess_index],guess_index+1,list_len) )
+                log.info( "\rtrying rand no {}, total {}/{}".format(guess_list[guess_index],guess_index+1,list_len) )
 
                 guess_index += 1
             else:
@@ -151,7 +151,7 @@ class Connector(object):
 
 if __name__ == '__main__':
     """ give a guess for id & date"""
-    log.basicConfig(level=log.INFO)
+    log.basicConfig(level=log.DEBUG)
 
     if len(sys.argv) != 3:
         log.info("Usage: python Connector.py [RECEIPT_ID] [DATE(YYYY/MM/DD)]")
