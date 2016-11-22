@@ -49,7 +49,7 @@ class TaskSolver(object):
         if not self.c.info:
             return False
         else:
-            print("===[Query Result]===")
+            log.info("===[Query Result]===")
             receipt = self.c.info
             receipt['money'] = receipt['money'].replace(',','')
             for k,r in receipt.iteritems():

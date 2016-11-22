@@ -43,18 +43,23 @@ class Connector(object):
         self.headers['Content-Type'] = "application/x-www-form-urlencoded"
         self.headers['Cookie'] = self.cookie_str
 
-    def getPath(self, path="/"):
+    def __initConnections__(self, path):
         self.conn = httplib.HTTPSConnection(self.domain)
         if self.conn is None:
             raise Exception
-
         self.setReqHeader()
         log.debug("GET:{} with {}".format(path, self.headers))
         self.conn.request("GET", path, headers=self.headers)
+
+    def getPath(self, path="/"):
+
+        self.__initConnections__( path )
+    
         while True:
             try:
                 self.res = self.conn.getresponse()
             except httplib.ResponseNotReady:
+
                 log.debug ("retry after 3 seconds...")
                 time.sleep( 3 )
                 continue
@@ -89,6 +94,7 @@ class Connector(object):
         # self.postData['CSRT'] = "13264906813807202173"
         self.postData['CSRT'] = "10413798442182405690"
 
+
     def postForm(self, path):
         params = urllib.urlencode(self.postData)
 
@@ -99,8 +105,12 @@ class Connector(object):
             try:
                 self.res = self.conn.getresponse()
             except (httplib.ResponseNotReady ,httplib.BadStatusLine):
+
                 log.info("retry")
-                time.sleep( 3 )
+                time.sleep( 3 ) 
+                self.conn = httplib.HTTPSConnection(self.domain)
+                self.setReqHeader()
+                self.conn.request("POST", path, params, headers=self.headers)
                 continue
             else:
                 break
