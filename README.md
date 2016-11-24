@@ -8,14 +8,15 @@ TWEleReceipt
 
 <font color="red">
     WARNING: This project is built under python2.7
-</fond>
+</font>
 
 This is a project to get receipts data from authority.
 Which can calculate and summarize the data.
 
 The server was built by Django, and default database was sqlite
 
-## Client
+# Client
+	This client should run after the server was up.
 
 Initial
 -----------------------------------
@@ -26,7 +27,7 @@ Start Client
         python2 TaskSolver.py
 
 
-## Server
+# Server
 
 Initial
 -----------------------------------
