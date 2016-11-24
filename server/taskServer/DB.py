@@ -24,7 +24,6 @@ def getTask():
     log.info( "Receipt count : {}".format( receiptSize ) )
     log.info( "==============================" )
     if tasks:
-
         task = tasks[0]
         task.queued = True
         task.save()
