@@ -106,8 +106,12 @@ class TaskSolver(object):
     def start_solver(self):
 
         while True:
+            try:
+                task = requests.get(self.server+self.getTaskUrl)
+            except :
+                log.error( "connection to server failed... retry after 10 secs" )
+                continue
 
-            task = requests.get(self.server+self.getTaskUrl)
             log.debug( "Recieve task : {}".format ( task.text ) )
             time_start = time.time()
             task_dict = json.loads( task.text )
