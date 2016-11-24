@@ -9,7 +9,7 @@ class Receipt( models.Model ):
     taxid = models.IntegerField()
 
     class Meta:
-        unique_together = ["receipt", "date", "taxid"]
+        unique_together = ["receipt", "date"]
 
 
 
@@ -40,7 +40,7 @@ class Task( models.Model ):
             }
         )
     class Meta:
-        unique_together = ["receipt", "date", "date_guess", "direction", "distance" ]
+        unique_together = ["receipt", "date", "date_guess"]
 
 class TaskStatistics( models.Model ):
     task = models.ForeignKey( Task )

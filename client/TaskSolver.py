@@ -14,7 +14,7 @@ DEBUG_LEVEL = log.DEBUG
 class TaskSolver(object):
     def __init__(self):
         self.tasks = []
-        self.server = "http://140.113.87.26:8000"
+        self.server = "http://127.0.0.1:8000"
         self.getTaskUrl = "/api/getTask/"
         self.c = Connector()
         self.data = ""
@@ -64,17 +64,37 @@ class TaskSolver(object):
         receipt_num += delta
         return receipt_eng+str(receipt_num)
 
+    # Using success density
+    def resultAnalysis(self, suc_density):
+        # |max|>|min|: mostly success, otherwise, fail
+        # 0 ~ 1: confidence
+
+        min_den = min(suc_density)
+        max_den = max(suc_density)
+        total = len(suc_density)
+        if abs(min_den) > abs(max_den):
+            cov = min_den - max_den
+        else:
+            cov = max_den - min_den
+        return (1.0*cov/total)**2
+
+
     def solve_task(self, task_dict):
 
         self.receipt_done = {}
-
+        density = []
         distance = task_dict['distance']
         date = task_dict['date']
         direction = task_dict['direction']
         receipt = task_dict['receipt']
 
-        start_receipt = receipt
-        start_receipt_num = int(start_receipt[2:10])
+        if distance == 1:
+            start_receipt = receipt
+            start_receipt_num = int(start_receipt[2:10])
+        else:
+            start_receipt_num = int(receipt[2:10])+distance-1
+            start_receipt = receipt[:2]+str(start_receipt_num)
+
         current_receipt = start_receipt
         current_receipt_num = int(current_receipt[2:10])
         success_count = 0
@@ -83,25 +103,37 @@ class TaskSolver(object):
         while (abs(start_receipt_num - current_receipt_num) < distance):
             log.info("task solving..." + str( abs(start_receipt_num - current_receipt_num) + 1 ) +  '/' + str( distance ))
             success = self.Query(current_receipt, date)
+            # XX12345600, -1  -> ~600, 599, 598, 597
+            current_receipt = self._modify_receipt_num(current_receipt,direction)
+            current_receipt_num = int(current_receipt[2:10])
             if success is True:
-                current_receipt = self._modify_receipt_num(current_receipt,direction)
-                current_receipt_num = int(current_receipt[2:10])
-                success_count += 1
+                if len(density) != 0 and density[-1] > 0:
+                    density.append(density[-1]+1)
+                else:
+                    density.append(1)
                 lastSuccessReciept = current_receipt
             else:
-                current_receipt = self._modify_receipt_num(current_receipt,direction)
-                current_receipt_num = int(current_receipt[2:10])
+                if len(density) != 0 and density[-1] < 0:
+                    density.append(density[-1]-1)
+                else:
+                    density.append(-1)
 
+        trend = self.resultAnalysis(density)
 
         result = {
-                'success':success_count,
-                'error':distance-success_count,
-                'lastSuccessReceipt': lastSuccessReciept
+                'success':len(filter(lambda i:i > 0, density)),
+                'error':len(filter(lambda i:i < 0, density)),
+                'lastSuccessReceipt': lastSuccessReciept,
+                'guess':trend
                 }
         receipt = self.receipt_done
         return_data = {'result':result,'receipt':self.receipt_done,'task':task_dict}
 
         return return_data
+
+
+
+
 
     def start_solver(self):
 
@@ -116,7 +148,7 @@ class TaskSolver(object):
                 log.error( 'Server currently down or no tasks, wait 10 secs' )
                 time.sleep( 10 )
                 continue
-        
+
 
             result = solver.solve_task(task_dict)
 
@@ -133,7 +165,7 @@ class TaskSolver(object):
             log.info( "missing rate : {}%\n".format( receiptFailed/task_dict['distance'] ) )
             log.info( "\n==================================================\n" )
 
-            log.debug( "send : \n{}".format(result) )
+            log.info( "send : \n{}".format(result) )
             requests.post(self.server+'/api/reportTask/', data=json.dumps( result ))
 
 

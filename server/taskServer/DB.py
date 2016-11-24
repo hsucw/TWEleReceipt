@@ -39,34 +39,45 @@ def addTaskWithTwoDirection( task ):
 
     addTask( task )
     task['direction'] = -task['direction']
+    task['receipt']= task['receipt'][:2]+str(int(task['receipt'][2:])+task['direction']*task['distance'])
     addTask( task )
 
     return
 
 def addTask( task ):
 
-    date = datetime.date( 1911+int(task['date'][:3]), int(task['date'][4:6]), int(task['date'][7:9]) )
+    log.info("---add task---")
+    log.info(task)
+    log.info("---task added----")
+
+    try:
+        y,m,d = task['date'].split('/')
+    except ValueError:
+        log.error( 'error date format' )
+    date = datetime.date(int(y), int(m), int(d))
 
     if date > datetime.date.today():
         raise DateOverFlowError(date)
 
-    hash = hashlib.sha1()
-    hash.update( (task['receipt']/100) + task['date'] + task['direction'] )
-    hashString = hash.digest()
-
-    if len( Task.objects.filter (
-                               hash = hashString
-                           ) ) == 0 :
+    shahash = hashlib.sha1()
+    shahash.update( task['receipt'][:2] + str(int(task['receipt'][2:])/100) + task['date'] + str(task['direction']) )
+    hashString = shahash.hexdigest()
+    print hashString
+    if len( Task.objects.filter(hash = hashString) ) == 0 :
         Task.objects.create(
             receipt = task['receipt'],
             date = task['date'],
             date_guess = task['date_guess'],
             direction = task['direction'],
             distance = task['distance'],
+            date_min = task['date_min'],
+            date_max = task['date_max'],
             hash = hashString
         )
     else:
-        raise TaskAlreadyExistsError(task)
+        log.info("Task already exists")
+        # should not use error
+        #raise TaskAlreadyExistsError(task)
 
     return
 

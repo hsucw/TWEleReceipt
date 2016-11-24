@@ -9,8 +9,8 @@ import json
 import Helper
 import urlparse
 import datetime
-
-
+import traceback
+import sys
 
 
 
@@ -34,11 +34,18 @@ def __repackTask__( task ):
     retTask[ 'receipt' ] = task['receipt'][0]
     retTask[ 'receipt' ] = retTask['receipt'][:2] + str( int(int(retTask[ 'receipt' ][2:]) / 100) * 100  ).zfill(8)
 
-    retTask[ 'date']  = task['date'][0]
+    #handle 2016-10-15, 105-10-15 ==> 2016/10/15
+    y,m,d = task['date'][0].replace('-','/').split("/")
+    if int(y) < 1000:
+        y = str(int(y)+1911)
+    retTask[ 'date'] = '/'.join((y,m,d))
 
-    retTask[ 'date' ] = retTask[ 'date' ].replace( '-', '/' )
-    retTask[ 'date' ] = str(int(retTask[ 'date' ][:4]) - 1911 ) + retTask['date'][4:]
-    date = datetime.date( int(task['date'][0][:4]), int(task['date'][0][5:7]), int(task['date'][0][8:10]) )
+
+    #retTask[ 'date']  = task['date'][0]
+    #retTask[ 'date' ] = retTask[ 'date' ].replace( '-', '/' )
+    #retTask[ 'date' ] = str(int(retTask[ 'date' ][:4]) - 1911 ) + retTask['date'][4:]
+
+    date = datetime.date( int(y),int(m),int(d) )
     date_max = date + datetime.timedelta( days=settings.DATE_RANGE )
     date_min = date - datetime.timedelta( days=settings.DATE_RANGE )
 
@@ -49,8 +56,8 @@ def __repackTask__( task ):
     retTask[ 'distance' ] = settings.RECEIPT_DISTANCE
     retTask[ 'fail_cnt' ] = 0
 
-    retTask[ 'date_max' ] = date_max.strftime("%Y-%m-%d")
-    retTask[ 'date_min' ] = date_min.strftime("%Y-%m-%d")
+    retTask[ 'date_max' ] = date_max.strftime("%Y/%m/%d")
+    retTask[ 'date_min' ] = date_min.strftime("%Y/%m/%d")
 
     log.debug( "{}, {} has been received".format( retTask['receipt'] , retTask['date'] ) )
 
@@ -79,10 +86,13 @@ def addTask( request ):
         return HttpResponse( 'receipt already in record' )
     except Exception, e:
         log.error( str(e) )
+        traceback.print_exc(file=sys.stdout)
         return HttpResponse( 'add Task Failed' )
 
 
     return HttpResponse( 'add Task Success' )
+
+
 
 
 
@@ -98,7 +108,8 @@ def reportTask( request ):
 
         DB.reportTask( taskReport )
 
-        if queryResult['success'] > 0:
+        # continue the next chunk
+        if queryResult['success'] == 100:
             DB.storeData( taskReport['receipt'] )
 
             task = taskReport['task'].copy()
@@ -107,7 +118,6 @@ def reportTask( request ):
                 queryResult['lastSuccessReceipt'],
                 task['direction']
             )
-
             DB.addTask( task )
         else:
 

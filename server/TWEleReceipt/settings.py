@@ -126,11 +126,13 @@ STATICFILES_DIRS = (os.path.join('static'),)
 # self defined parameters
 
 
-# the date guess range for client receipt
-DATE_RANGE = 3
-
 # guess distance per task
 RECEIPT_DISTANCE = 100
+
+# the date guess range for client receipt
+# if RECEIPT_DISTANCE is not large, usually one day is enough
+DATE_RANGE = 1
+
 
 if os.getenv('DATABASE_URL') is not None:
     import dj_database_url
