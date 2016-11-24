@@ -1,0 +1,43 @@
+<html>
+    <head>
+        {% load static %}
+        <title>add Receipt</title>
+
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" type="text/css" href="{% static 'taskServer/css/bootstrap.min.css' %}">
+        <link rel="stylesheet" type="text/css" href="{% static 'taskServer/css/main.css' %}">
+        <script src="{% static 'taskServer/js/jquery-3.1.1.min.js' %}"></script>
+        <script src="{% static 'taskServer/js/main.js' %}"></script>
+        <script src="{% static 'taskServer/js/bootstrap.min.js' %}"></script>
+        <script src="{% static 'taskServer/js/Chart.min.js' %}"></script>
+
+    </head>
+    <body>
+        <form  class="mainContainer" id = "receipt-form" action="/api/addTask/" method="post">
+            {% csrf_token %}
+            <div class="form-group row">
+                <label for="receiptNum" class="col-xs-2 col-form-label">receipt Number</label>
+                <div class="col-xs-6">
+                <input name="receipt" pattern="[A-Z]{2}[0-9]{8}" class="form-control" id="receiptNum" aria-describedby="receiptHelp" placeholder="Enter Receipt Num" required>
+                <small id="receiptHelp" class="form-text text-muted"> Enter Receipt in following Format ML05843500</small>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="receipt-date" class="col-xs-2 col-form-label">Date</label>
+                <div class="col-xs-6">
+                    <input name="date" class="form-control" type="date" value="2016-08-19" id="receipt-date" required>
+                </div>
+            </div>
+            <div class="form-group row">
+              <label for="receipt-random-digit" class="col-xs-2 col-form-label">Four Digit Random number</label>
+              <div class="col-xs-6">
+                <input name="receipt-random-digit" class="form-control" type="password" value="0000" id="receipt-random-digit">
+              </div>
+            </div>
+            <button id="receipt-submit-button" class="btn btn-primary" >Submit</button>
+        </form>
+
+
+    </body>
+</html>

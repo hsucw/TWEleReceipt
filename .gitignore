@@ -1,11 +1,10 @@
 # For tmp jpeg
 *.jpeg
-*.html
 pic/
 .DS_Store
 *.pyc
 .idea/*
+server/lib*
 *.swp
-*.txt
 .ropeproject/
 DB/
