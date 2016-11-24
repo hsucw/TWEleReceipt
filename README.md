@@ -1,14 +1,9 @@
 
-
-
-
-
 TWEleReceipt
 ===================================
 
-<font color="red">
-    WARNING: This project is built under python2.7
-</font>
+
+**This project is built under python2.7**
 
 This is a project to get receipts data from authority.
 Which can calculate and summarize the data.
