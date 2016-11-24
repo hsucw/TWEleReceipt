@@ -14,7 +14,7 @@ DEBUG_LEVEL = log.DEBUG
 class TaskSolver(object):
     def __init__(self):
         self.tasks = []
-        self.server = "http://localhost:8000"
+        self.server = "http://140.113.87.26:8000"
         self.getTaskUrl = "/api/getTask/"
         self.c = Connector()
         self.data = ""
@@ -49,7 +49,7 @@ class TaskSolver(object):
         if not self.c.info:
             return False
         else:
-            print("===[Query Result]===")
+            log.info("===[Query Result]===")
             receipt = self.c.info
             receipt['money'] = receipt['money'].replace(',','')
             for k,r in receipt.iteritems():
