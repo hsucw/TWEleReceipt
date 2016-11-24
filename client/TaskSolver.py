@@ -83,56 +83,61 @@ class TaskSolver(object):
 
         self.receipt_done = {}
         density = []
+        fails = []
         distance = task_dict['distance']
         date = task_dict['date']
         direction = task_dict['direction']
         receipt = task_dict['receipt']
 
-        if distance == 1:
-            start_receipt = receipt
-            start_receipt_num = int(start_receipt[2:10])
-        else:
-            start_receipt_num = int(receipt[2:10])+distance-1
-            start_receipt = receipt[:2]+str(start_receipt_num)
+        if direction != 0:
+            init_alpha = receipt[:2]
+            number = int(receipt[2:])
+            if direction == 1:
+                num_list = range(number,number+direction*distance)
+            elif direction == -1:
+                # XX12345600, -1  -> ~600, 599, 598, 597
+                num_list = list(reversed(range(number, number+distance-1)))
+            else:
+                log.error("Unknown distance")
+                exit(1)
 
-        current_receipt = start_receipt
-        current_receipt_num = int(current_receipt[2:10])
-        success_count = 0
-        lastSuccessReciept = self._modify_receipt_num( current_receipt, -direction )
+            receipt_queue = [init_alpha+str(x) for x in num_list]
+        else: #direction == 0
+            receipt_queue = receipt
 
-        while (abs(start_receipt_num - current_receipt_num) < distance):
-            log.info("task solving..." + str( abs(start_receipt_num - current_receipt_num) + 1 ) +  '/' + str( distance ))
-            success = self.Query(current_receipt, date)
-            # XX12345600, -1  -> ~600, 599, 598, 597
-            current_receipt = self._modify_receipt_num(current_receipt,direction)
-            current_receipt_num = int(current_receipt[2:10])
-            if success is True:
+        lastSuccessReciept = ""
+        total = len(receipt_queue)
+        cnt = 1
+        for query_rcpt in receipt_queue:
+            log.info("task solving...{}/{}".format(cnt, total))
+            res = self.Query(query_rcpt, date)
+
+            if res is True:
                 if len(density) != 0 and density[-1] > 0:
                     density.append(density[-1]+1)
                 else:
                     density.append(1)
-                lastSuccessReciept = current_receipt
-            else:
+                lastSuccessReciept = query_rcpt
+            else: # False Query
+                fails.append(query_rcpt)
                 if len(density) != 0 and density[-1] < 0:
                     density.append(density[-1]-1)
                 else:
                     density.append(-1)
+            cnt+=1
 
         trend = self.resultAnalysis(density)
-
         result = {
                 'success':len(filter(lambda i:i > 0, density)),
                 'error':len(filter(lambda i:i < 0, density)),
                 'lastSuccessReceipt': lastSuccessReciept,
+                'fail':fails,
                 'guess':trend
                 }
         receipt = self.receipt_done
         return_data = {'result':result,'receipt':self.receipt_done,'task':task_dict}
 
         return return_data
-
-
-
 
 
     def start_solver(self):

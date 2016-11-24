@@ -30,7 +30,6 @@ def __repackTask__( task ):
 
     retTask = {}
 
-
     retTask[ 'receipt' ] = task['receipt'][0]
     retTask[ 'receipt' ] = retTask['receipt'][:2] + str( int(int(retTask[ 'receipt' ][2:]) / 100) * 100  ).zfill(8)
 
@@ -39,25 +38,17 @@ def __repackTask__( task ):
     if int(y) < 1000:
         y = str(int(y)+1911)
     retTask[ 'date'] = '/'.join((y,m,d))
-
-
-    #retTask[ 'date']  = task['date'][0]
-    #retTask[ 'date' ] = retTask[ 'date' ].replace( '-', '/' )
-    #retTask[ 'date' ] = str(int(retTask[ 'date' ][:4]) - 1911 ) + retTask['date'][4:]
-
     date = datetime.date( int(y),int(m),int(d) )
-    date_max = date + datetime.timedelta( days=settings.DATE_RANGE )
-    date_min = date - datetime.timedelta( days=settings.DATE_RANGE )
-
 
     retTask[ 'date_guess' ] = 0
-
     retTask[ 'direction' ] = 1
     retTask[ 'distance' ] = settings.RECEIPT_DISTANCE
     retTask[ 'fail_cnt' ] = 0
 
-    retTask[ 'date_max' ] = date_max.strftime("%Y/%m/%d")
-    retTask[ 'date_min' ] = date_min.strftime("%Y/%m/%d")
+    #date_max = date + datetime.timedelta( days=settings.DATE_RANGE )
+    #date_min = date - datetime.timedelta( days=settings.DATE_RANGE )
+    #retTask[ 'date_max' ] = date_max.strftime("%Y/%m/%d")
+    #retTask[ 'date_min' ] = date_min.strftime("%Y/%m/%d")
 
     log.debug( "{}, {} has been received".format( retTask['receipt'] , retTask['date'] ) )
 
@@ -107,6 +98,25 @@ def reportTask( request ):
         queryResult = taskReport['result']
 
         DB.reportTask( taskReport )
+        if queryResult['success'] > 0:
+            DB.storeData( taskReport['receipt'] )
+
+        trend = queryResult['guess']
+        fails = queryResult['fail']
+        task = taskReport['task'].copy()
+        """
+        if task['fail_cnt'] < 3:
+            if abs(trend) > 0.5:
+                if trend >= 0:#query this, next
+                    genTask(,)
+                else:# query this
+                    genTask()
+
+            else:#many slice
+                print "sad"
+        else:
+        """
+
 
         # continue the next chunk
         if queryResult['success'] == 100:

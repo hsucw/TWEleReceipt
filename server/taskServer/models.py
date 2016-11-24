@@ -16,8 +16,6 @@ class Receipt( models.Model ):
 class Task( models.Model ):
     receipt = models.TextField()
     date = models.TextField()
-    date_max = models.TextField()
-    date_min = models.TextField()
     date_guess = models.IntegerField()
     direction = models.IntegerField()
     distance = models.IntegerField(default=100)
@@ -40,7 +38,7 @@ class Task( models.Model ):
             }
         )
     class Meta:
-        unique_together = ["receipt", "date", "date_guess"]
+        unique_together = ["receipt", "date"]
 
 class TaskStatistics( models.Model ):
     task = models.ForeignKey( Task )
