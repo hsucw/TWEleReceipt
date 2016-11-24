@@ -27,8 +27,9 @@ class TaskSolver(object):
 
         res = None
 
+        noneCnt = 0
 
-        while res is None:
+        while res is None and noneCnt < 30:
             if not self.c.session_valid:
                 del self.c
                 self.c = Connector()
@@ -40,7 +41,7 @@ class TaskSolver(object):
             self.c.postForm( self.c.postPath )
             #log.info('[{} {}]Post data'.format(self.c.res.status,self.c.res.reason))
             res = self.c.getInfo()
-
+            noneCnt+=1
             with open("out.html" , "w") as outFd:
                 outFd.write(self.c.body)
 
