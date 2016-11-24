@@ -27,7 +27,7 @@ def getTask():
         task = tasks[0]
         task.queued = True
         task.save()
-        thread.start_new_thread( taskTimeOut, (30, task.id))
+        thread.start_new_thread( taskTimeOut, (150, task.id))
         task = task.as_json()
         task['result'] = 'success'
         log.info( "task send to client : {}".format(task) )
