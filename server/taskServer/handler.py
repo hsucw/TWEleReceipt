@@ -3,6 +3,8 @@ from django.views.decorators.csrf import csrf_exempt
 from utils.Exceptions import TaskAlreadyExistsError, DateOverFlowError
 from django.conf import settings
 
+import traceback
+
 import logging as log
 import DB
 import json
@@ -15,7 +17,6 @@ import datetime
 
 
 log.basicConfig(level=log.DEBUG)
-
 
 # send the task to client
 def getTask( request ):
@@ -43,7 +44,7 @@ def __repackTask__( task ):
     date_min = date - datetime.timedelta( days=settings.DATE_RANGE )
 
 
-    retTask[ 'date_guess' ] = 0
+    retTask[ 'date_guess' ] = 1
 
     retTask[ 'direction' ] = 1
     retTask[ 'distance' ] = settings.RECEIPT_DISTANCE
@@ -98,47 +99,52 @@ def reportTask( request ):
 
         DB.reportTask( taskReport )
 
-        if queryResult['success'] > 0:
-            DB.storeData( taskReport['receipt'] )
+        try:
 
-            task = taskReport['task'].copy()
-            task['fail_cnt'] = 0
-            task['receipt'] = Helper.modifyReceiptNum(
-                queryResult['lastSuccessReceipt'],
-                task['direction']
-            )
-
-            DB.addTask( task )
-        else:
-
-            if taskReport['task']['fail_cnt'] == 0:
-
-                originTask = taskReport['task'].copy()
-                task = taskReport['task'].copy()
-                task['fail_cnt'] += 1
-                task['date_guess'] = 1
-                task['date'] = Helper.modifyDate(originTask['date'], 1)
-                task['receipt'] = Helper.modifyReceiptNum(queryResult['lastSuccessReceipt'], task['direction'])
-                DB.addTask( task )
+            if queryResult['success'] > 0:
+                DB.storeData(taskReport['receipt'])
 
                 task = taskReport['task'].copy()
-                task['fail_cnt'] += 1
-                task['date_guess'] = -1
-                task['date'] = Helper.modifyDate(originTask['date'], -1)
-                task['receipt'] = Helper.modifyReceiptNum(queryResult['lastSuccessReceipt'], task['direction'])
-                DB.addTask( task )
-
-            elif taskReport['task']['fail_cnt'] > 3:
-                log.info( 'a task was terminated due to fail_cnt limit exceed')
-
-            else:
-                task = taskReport['task'].copy()
-                task['fail_cnt'] += 1
-                task['date'] = Helper.modifyDate(
-                    task['date'],
-                    task['date_guess']
+                task['fail_cnt'] = 0
+                task['receipt'] = Helper.modifyReceiptNum(
+                    queryResult['lastSuccessReceipt'],
+                    task['direction']
                 )
-                DB.addTask( task )
+
+                DB.addTaskMultiTasks(task, 1)
+            else:
+
+                if taskReport['task']['fail_cnt'] == 0:
+
+                    originTask = taskReport['task'].copy()
+                    task = taskReport['task'].copy()
+                    task['fail_cnt'] += 1
+                    task['date'] = Helper.modifyDate(originTask['date'], originTask['date_guess'])
+                    task['receipt'] = Helper.modifyReceiptNum(queryResult['lastSuccessReceipt'], task['direction'])
+                    DB.addTask(task)
+
+                    #task = taskReport['task'].copy()
+                    #task['fail_cnt'] += 1
+                    #task['date_guess'] = -1
+                    #task['date'] = Helper.modifyDate(originTask['date'], -1)
+                    #task['receipt'] = Helper.modifyReceiptNum(queryResult['lastSuccessReceipt'], task['direction'])
+                    #DB.addTask(task)
+
+                elif taskReport['task']['fail_cnt'] > 2:
+                    log.info('a task was terminated due to fail_cnt limit exceed')
+
+                else:
+                    task = taskReport['task'].copy()
+                    task['fail_cnt'] += 1
+                    task['date'] = Helper.modifyDate(
+                        task['date'],
+                        task['date_guess']
+                    )
+                    DB.addTask(task)
+        except Exception, e:
+            traceback.print_exc()
+
+
 
         return HttpResponse('report recorded')
 

@@ -5,6 +5,7 @@ import thread
 import time
 import datetime
 import hashlib
+import Helper
 from utils.Exceptions import DateOverFlowError, TaskAlreadyExistsError, DateOutOfRangeError
 
 def taskTimeOut( delay, id ):
@@ -40,9 +41,20 @@ def addTaskWithTwoDirection( task ):
 
     addTask( task )
     task['direction'] = -task['direction']
+    task['date_guess'] = -task['date_guess']
     addTask( task )
 
     return
+
+def addTaskMultiTasks( task , turn=1 ):
+
+    for i in range( turn ):
+
+        task['receipt'] = Helper.modifyReceiptNum( task['receipt'] , task['direction']*task['distance'] )
+        addTask( task )
+
+    return
+
 
 def addTask( task ):
 
