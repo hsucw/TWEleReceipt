@@ -17,13 +17,12 @@ def taskTimeOut( delay, id ):
 
 def getTask():
 
-    tasks = Task.objects.filter( queued=False )
+    tasks = Task.objects.filter(solved=False, queued=False)
 
-    log.info( "Tasks remain : {}" .format( len( tasks ) ))
 
-    if Task.objects.filter(solved=False, queued=False):
-
-        task = Task.objects.filter(solved=False, queued=False)[0]
+    if tasks:
+        log.info("Tasks remain : {}".format(len(tasks)))
+        task = tasks[0]
         task.queued = True
         task.save()
         thread.start_new_thread( taskTimeOut, (30, task.id))
