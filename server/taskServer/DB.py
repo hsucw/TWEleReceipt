@@ -14,7 +14,12 @@ def taskTimeOut( delay, id ):
         task[0].queued = False
         task[0].save()
 
+
 def getTask():
+
+    tasks = Task.objects.filter( queued=False )
+
+    log.info( "Tasks remain : {}" .format( len( tasks ) ))
 
     if Task.objects.filter(solved=False, queued=False):
 
