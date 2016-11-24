@@ -1,6 +1,0 @@
-db.*
-*.sqlite3
-*.swp
-*.pyc
-taskServer/migrations/*
-*.DS_Store

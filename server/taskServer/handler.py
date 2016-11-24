@@ -56,12 +56,7 @@ def __repackTask__( task ):
 
     return retTask
 
-def getDateRangeFromToken( token ):
 
-
-
-
-    return
 
 # add task by client submitted qr code
 def addTask( request ):

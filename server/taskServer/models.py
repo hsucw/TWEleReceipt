@@ -24,7 +24,7 @@ class Task( models.Model ):
     fail_cnt = models.IntegerField(default=0)
     solved = models.BooleanField(default=False)
     queued = models.BooleanField(default=False)
-
+    hash   = models.TextField()
     def as_json(self):
         return dict(
             {
