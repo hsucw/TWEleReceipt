@@ -51,7 +51,7 @@ def addTask( task ):
         raise DateOverFlowError(date)
 
     hash = hashlib.sha1()
-    hash.update( (int(task['receipt'][3:])/100) + task['date'] + task['direction'] )
+    hash.update( str(int(task['receipt'][3:])/100) + task['date'] + task['direction'] )
     hashString = hash.digest()
 
     if len( Task.objects.filter (

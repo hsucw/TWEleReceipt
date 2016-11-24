@@ -1,6 +1,9 @@
 # For tmp jpeg
 *.jpeg
+include/
+migrations/
 pic/
+bin/
 .DS_Store
 *.pyc
 .idea/*
