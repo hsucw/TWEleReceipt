@@ -1,0 +1,135 @@
+<html>
+    <head>
+        {% load static %}
+        <title>add Receipt</title>
+
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" type="text/css" href="{% static 'taskServer/css/bootstrap.min.css' %}">
+        <link rel="stylesheet" type="text/css" href="{% static 'taskServer/css/main.css' %}">
+        <script src="{% static 'taskServer/js/jquery-3.1.1.min.js' %}"></script>
+        <script src="{% static 'taskServer/js/main.js' %}"></script>
+        <script src="{% static 'taskServer/js/bootstrap.min.js' %}"></script>
+        <script src="{% static 'taskServer/js/Chart.min.js' %}"></script>
+
+    </head>
+    <body>
+        <canvas id="canvas1" width="200" height="200"></canvas>
+        <canvas id="canvas2" width="200" height="200"></canvas>
+<script>
+    var ctx = $('#canvas1')
+    var data = {
+    labels: ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24"],
+    datasets: [
+        {
+            label: "{{ dataset.summed.0.labels | safe }}",
+            fill: false,
+            lineTension: 0.1,
+            backgroundColor: "{{ dataset.summed.0.backgroundColor | safe}}",
+            borderColor: "{{ dataset.summed.0.borderColor | safe}}",
+            borderCapStyle: 'butt',
+            borderDash: [],
+            borderDashOffset: 0.0,
+            borderJoinStyle: 'miter',
+            pointBorderColor: "{{ dataset.summed.0.pointBorderColor | safe}}",
+            pointBackgroundColor: "#fff",
+            pointBorderWidth: 1,
+            pointHoverRadius: 5,
+            pointHoverBackgroundColor: "{{ dataset.summed.0.pointHoverBackgroundColor | safe}}",
+            pointHoverBorderColor: "{{ dataset.summed.0.pointHoverBorderColor | safe}}",
+            pointHoverBorderWidth: 2,
+            pointRadius: 5,
+            pointHitRadius: 10,
+            data: JSON.parse("{{ dataset.summed.0.data | safe}}"),
+            spanGaps: false,
+        },
+        {
+            label: "{{ dataset.summed.1.labels| safe }}",
+            fill: false,
+            lineTension: 0.1,
+            backgroundColor: "{{ dataset.summed.1.backgroundColor | safe}}",
+            borderColor: "{{ dataset.summed.1.borderColor | safe}}",
+            borderCapStyle: 'butt',
+            borderDash: [],
+            borderDashOffset: 0.0,
+            borderJoinStyle: 'miter',
+            pointBorderColor: "{{ dataset.summed.1.pointBorderColor | safe}}",
+            pointBackgroundColor: "#fff",
+            pointBorderWidth: 1,
+            pointHoverRadius: 5,
+            pointHoverBackgroundColor: "{{ dataset.summed.1.pointHoverBackgroundColor | safe}}",
+            pointHoverBorderColor: "{{ dataset.summed.1.pointHoverBorderColor | safe}}",
+            pointHoverBorderWidth: 2,
+            pointRadius: 5,
+            pointHitRadius: 10,
+            data: JSON.parse("{{ dataset.summed.1.data | safe}}"),
+            spanGaps: false,
+        },
+        {
+            label: "{{ dataset.summed.2.labels| safe }}",
+            fill: false,
+            lineTension: 0.1,
+            backgroundColor: "{{ dataset.summed.2.backgroundColor | safe}}",
+            borderColor: "{{ dataset.summed.2.borderColor | safe}}",
+            borderCapStyle: 'butt',
+            borderDash: [],
+            borderDashOffset: 0.0,
+            borderJoinStyle: 'miter',
+            pointBorderColor: "{{ dataset.summed.2.pointBorderColor | safe}}",
+            pointBackgroundColor: "#fff",
+            pointBorderWidth: 1,
+            pointHoverRadius: 5,
+            pointHoverBackgroundColor: "{{ dataset.summed.2.pointHoverBackgroundColor | safe}}",
+            pointHoverBorderColor: "{{ dataset.summed.2.pointHoverBorderColor | safe}}",
+            pointHoverBorderWidth: 2,
+            pointRadius: 5,
+            pointHitRadius: 10,
+            data: JSON.parse("{{ dataset.summed.2.data | safe}}"),
+            spanGaps: false,
+        }
+        ]
+    };
+  var myLineChart = Chart.Line(ctx, {
+    data: data
+  });
+
+</script>
+
+<script>
+    var ctx2 = $('#canvas2')
+   var data2 = {
+    labels: ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24"],
+    datasets: [
+        {
+            label: "{{ dataset.freq.0.labels | safe }}",
+            fill: false,
+            lineTension: 0.1,
+            backgroundColor: "{{ dataset.freq.0.backgroundColor | safe}}",
+            borderColor: "{{ dataset.freq.0.borderColor | safe}}",
+            borderCapStyle: 'butt',
+            borderDash: [],
+            borderDashOffset: 0.0,
+            borderJoinStyle: 'miter',
+            pointBorderColor: "{{ dataset.freq.0.pointBorderColor | safe}}",
+            pointBackgroundColor: "#fff",
+            pointBorderWidth: 1,
+            pointHoverRadius: 5,
+            pointHoverBackgroundColor: "{{ dataset.freq.0.pointHoverBackgroundColor | safe}}",
+            pointHoverBorderColor: "{{ dataset.freq.0.pointHoverBorderColor | safe}}",
+            pointHoverBorderWidth: 2,
+            pointRadius: 5,
+            pointHitRadius: 10,
+            data: JSON.parse("{{ dataset.freq.0.data | safe}}"),
+            spanGaps: false,
+        }
+        ]
+    };
+  var myLineChart2 = Chart.Line(ctx2, {
+    data: data2
+  });
+
+</script>
+
+
+    </body>
+</html>
