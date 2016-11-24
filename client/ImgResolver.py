@@ -23,16 +23,16 @@ class ImgResolver(object):
         self.check = None
         self.tmp_file = ""
 
-        try:
-            os.makedirs(self.uns_path)
-            os.makedirs(self.s_path)
-        except OSError as e:
-            if e.errno == errno.EEXIST:
-                pass
-            else:
-                log.error("Unknown OSError")
-        else:
-            log.error("Cannot Create Folders for Learning")
+        #try:
+        #    os.makedirs(self.uns_path)
+        #    os.makedirs(self.s_path)
+        #except OSError as e:
+        #    if e.errno == errno.EEXIST:
+        #        pass
+        #    else:
+        #        log.error("Unknown OSError")
+        #else:
+        #    log.error("Cannot Create Folders for Learning")
 
     def loadPics(self):
         content = None
