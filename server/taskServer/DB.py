@@ -6,6 +6,7 @@ import time
 import datetime
 import hashlib
 import Helper
+import traceback
 from utils.Exceptions import DateOverFlowError, TaskAlreadyExistsError, DateOutOfRangeError
 
 def taskTimeOut( delay, id ):
@@ -105,12 +106,15 @@ def reportTask( taskReport ):
 def storeData( receipts ):
 
     for receipt, vals in receipts.iteritems():
-        Receipt.objects.create(
-            receipt = receipt,
-            date =  vals[0],
-            money = vals[1],
-            taxid = vals[2]
-        )
+        try:
+            Receipt.objects.create(
+                receipt = receipt,
+                date =  vals[0],
+                money = vals[1],
+                taxid = vals[2]
+            )
+        except:
+            traceback.print_exc()
 
     return
 
