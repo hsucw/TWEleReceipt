@@ -17,13 +17,15 @@ def taskTimeOut( delay, id ):
 
 def getTask():
 
-    tasks = Task.objects.filter( queued=False )
-
+    tasks = Task.objects.filter( queued=False, solved=False )
+    receiptSize = len ( Receipt.objects.all() )
+    log.info( "==============================" )
     log.info( "Tasks remain : {}" .format( len( tasks ) ))
+    log.info( "Receipt count : {}".format( receiptSize ) )
+    log.info( "==============================" )
+    if tasks:
 
-    if Task.objects.filter(solved=False, queued=False):
-
-        task = Task.objects.filter(solved=False, queued=False)[0]
+        task = tasks[0]
         task.queued = True
         task.save()
         thread.start_new_thread( taskTimeOut, (30, task.id))
@@ -52,7 +54,7 @@ def addTask( task ):
 
     hash = hashlib.sha1()
     hash.update( str(int(task['receipt'][3:])/100) + task['date'] + str(task['direction']) )
-    hashString = hash.digest()
+    hashString = hash.hexdigest()
 
     if len( Task.objects.filter (
                                hash = hashString
