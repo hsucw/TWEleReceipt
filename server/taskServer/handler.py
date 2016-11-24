@@ -128,7 +128,7 @@ def reportTask( request ):
                 task['receipt'] = Helper.modifyReceiptNum(queryResult['lastSuccessReceipt'], task['direction'])
                 DB.addTask( task )
 
-            elif taskReport['task']['fail_cnt'] > 5:
+            elif taskReport['task']['fail_cnt'] > 2:
                 log.info( 'a task was terminated due to fail_cnt limit exceed')
 
             else:
