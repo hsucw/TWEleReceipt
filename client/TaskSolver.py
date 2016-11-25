@@ -11,6 +11,17 @@ import requests
 
 DEBUG_LEVEL = log.DEBUG
 
+def progress(count, total, suffix=''):
+    bar_len = 60
+    filled_len = int(round(bar_len * count / float(total)))
+
+    percents = round(100.0 * count / float(total), 1)
+    bar = '=' * filled_len + '-' * (bar_len - filled_len)
+
+    sys.stdout.write('[%s] %s%s ...%s (%s/%s)\r' % (bar, percents, '%', suffix, count, total))
+    sys.stdout.flush()  # As suggested by Rom Ruben
+
+
 class TaskSolver(object):
     def __init__(self):
         self.tasks = []
@@ -115,7 +126,7 @@ class TaskSolver(object):
         total = len(receipt_queue)
         cnt = 0
         for query_rcpt in receipt_queue:
-            log.info("task solving...{}/{}".format(cnt, total))
+            progress(cnt, total, query_rcpt)
             res = self.Query(query_rcpt, date)
 
             if res is True:
