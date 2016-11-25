@@ -45,10 +45,6 @@ def __repackTask__( task ):
     retTask[ 'distance' ] = settings.RECEIPT_DISTANCE
     retTask[ 'fail_cnt' ] = 0
 
-    #date_max = date + datetime.timedelta( days=settings.DATE_RANGE )
-    #date_min = date - datetime.timedelta( days=settings.DATE_RANGE )
-    #retTask[ 'date_max' ] = date_max.strftime("%Y/%m/%d")
-    #retTask[ 'date_min' ] = date_min.strftime("%Y/%m/%d")
 
     log.debug( "{}, {} has been received".format( retTask['receipt'] , retTask['date'] ) )
 
@@ -101,64 +97,40 @@ def reportTask( request ):
         if queryResult['success'] > 0:
             DB.storeData( taskReport['receipt'] )
 
-        trend = queryResult['guess']
+        changeDay = queryResult['guess']
         fails = queryResult['fail']
-        task = taskReport['task'].copy()
-        """
-        if task['fail_cnt'] < 3:
-            if abs(trend) > 0.5:
-                if trend >= 0:#query this, next
-                    genTask(,)
-                else:# query this
-                    genTask()
+        curTask = taskReport['task'].copy()
 
-            else:#many slice
-                print "sad"
+        direction = curTask['direction']
+        distance = curTask['distance']
+        todo = curTask['todo']
+
+        total_success = queryResult['success'] + curTask['succ']
+
+        if changeDay > 0.5:
+            newDate = Helper.modifyDate(curTask['date'], 1*direction)
         else:
-        """
+            newDate = curTask['date']
 
+        # mostly solved can create one job
+        if total_success*1.0/distance > 0.8:
+            newTask = curTask.copy()
+            newTask['fail_cnt']=0
+            newTask['receipt']=Helper.modifyReceiptNum(curTask['receipt'], direction*distance)
+            newTask['date'] = newDate
+            DB.addTask(newTask)
+            log.info('create one task')
 
-        # continue the next chunk
-        if queryResult['success'] == 100:
-            DB.storeData( taskReport['receipt'] )
-
-            task = taskReport['task'].copy()
-            task['fail_cnt'] = 0
-            task['receipt'] = Helper.modifyReceiptNum(
-                queryResult['lastSuccessReceipt'],
-                task['direction']
-            )
-            DB.addTask( task )
+        # Redo the remainders
+        if curTask['fail_cnt'] < 3:
+            curTask['fail_cnt']+=1
+            curTask['todo']=','.join(fails)
+            curTask['date'] = newDate
+            curTask['succ'] = total_success
+            DB.updateTask(curTask)
         else:
+            log.info( 'a task was terminated due to fail_cnt limit exceed')
 
-            if taskReport['task']['fail_cnt'] == 0:
-
-                originTask = taskReport['task'].copy()
-                task = taskReport['task'].copy()
-                task['fail_cnt'] += 1
-                task['date_guess'] = 1
-                task['date'] = Helper.modifyDate(originTask['date'], 1)
-                task['receipt'] = Helper.modifyReceiptNum(queryResult['lastSuccessReceipt'], task['direction'])
-                DB.addTask( task )
-
-                task = taskReport['task'].copy()
-                task['fail_cnt'] += 1
-                task['date_guess'] = -1
-                task['date'] = Helper.modifyDate(originTask['date'], -1)
-                task['receipt'] = Helper.modifyReceiptNum(queryResult['lastSuccessReceipt'], task['direction'])
-                DB.addTask( task )
-
-            elif taskReport['task']['fail_cnt'] > 5:
-                log.info( 'a task was terminated due to fail_cnt limit exceed')
-
-            else:
-                task = taskReport['task'].copy()
-                task['fail_cnt'] += 1
-                task['date'] = Helper.modifyDate(
-                    task['date'],
-                    task['date_guess']
-                )
-                DB.addTask( task )
 
         return HttpResponse('report recorded')
 

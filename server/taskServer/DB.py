@@ -3,7 +3,7 @@ import logging as log
 import json
 import thread
 import time
-import datetime
+from datetime import datetime, timedelta, date
 import hashlib
 from utils.Exceptions import DateOverFlowError, TaskAlreadyExistsError, DateOutOfRangeError
 
@@ -13,6 +13,22 @@ def taskTimeOut( delay, id ):
     if task:
         task[0].queued = False
         task[0].save()
+
+def updateTask(targetTask):
+    res = Task.objects.filter(id=targetTask['id'])
+    if len(res)==1:
+        task = res[0]
+        task.queued = False
+        task.solved=False
+        task.todo = targetTask['todo']
+        task.date = targetTask['date']
+        task.succ = targetTask['succ']
+        task.save()
+        log.info("update task:{}".format(task))
+    else:
+        log.info("cannot find target task")
+
+
 
 
 def getTask():
@@ -50,32 +66,25 @@ def addTask( task ):
     log.info(task)
     log.info("---task added----")
 
+    tskDate = datetime.strptime(task['date'],"%Y/%m/%d")
+
+    if tskDate.date() > date.today():
+        log.info("Cannot add task, dateOverToday:{}".format(tskDate.date()))
+        return
+
+    #if len( Task.objects.filter(receipt = task['receipt']) ) == 0 :
     try:
-        y,m,d = task['date'].split('/')
-    except ValueError:
-        log.error( 'error date format' )
-    date = datetime.date(int(y), int(m), int(d))
-
-    if date > datetime.date.today():
-        raise DateOverFlowError(date)
-
-    shahash = hashlib.sha1()
-    shahash.update( task['receipt'][:2] + str(int(task['receipt'][2:])/100) + task['date'] + str(task['direction']) )
-    hashString = shahash.hexdigest()
-    print hashString
-    if len( Task.objects.filter(hash = hashString) ) == 0 :
         Task.objects.create(
             receipt = task['receipt'],
             date = task['date'],
             date_guess = task['date_guess'],
             direction = task['direction'],
             distance = task['distance'],
-            date_min = task['date_min'],
-            date_max = task['date_max'],
-            hash = hashString
         )
-    else:
-        log.info("Task already exists")
+    except Exception, e:
+        log.error( str(e) )
+        #traceback.print_exc(file=sys.stdout)
+        log.info("Cannot add Task")
         # should not use error
         #raise TaskAlreadyExistsError(task)
 

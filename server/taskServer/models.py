@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 from django.db import models
 
 class Receipt( models.Model ):
-    receipt = models.TextField()
+    receipt = models.TextField(unique=True,max_length=10)
     date = models.TextField()
     money = models.IntegerField()
     taxid = models.IntegerField()
@@ -22,7 +22,8 @@ class Task( models.Model ):
     fail_cnt = models.IntegerField(default=0)
     solved = models.BooleanField(default=False)
     queued = models.BooleanField(default=False)
-    hash   = models.TextField(default="NULL")
+    todo = models.TextField(null=True)
+    succ = models.IntegerField(default=0)
     def as_json(self):
         return dict(
             {
@@ -34,6 +35,7 @@ class Task( models.Model ):
                 "distance": self.distance,
                 "fail_cnt": self.fail_cnt,
                 "solved": self.solved,
+                "todo": self.todo,
                 "queued": self.queued
             }
         )

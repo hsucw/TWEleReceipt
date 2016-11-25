@@ -72,11 +72,14 @@ class TaskSolver(object):
         min_den = min(suc_density)
         max_den = max(suc_density)
         total = len(suc_density)
-        if abs(min_den) > abs(max_den):
-            cov = min_den - max_den
+        cov = max_den - min_den
+
+        if suc_density[-1] > 0:
+            p = 0.0
         else:
-            cov = max_den - min_den
-        return (1.0*cov/total)**2
+            p = 1.0
+
+        return (p*cov/total)**2
 
 
     def solve_task(self, task_dict):
@@ -89,7 +92,9 @@ class TaskSolver(object):
         direction = task_dict['direction']
         receipt = task_dict['receipt']
 
-        if direction != 0:
+
+        if task_dict['todo'] == None:
+            log.info("resolve new task")
             init_alpha = receipt[:2]
             number = int(receipt[2:])
             if direction == 1:
@@ -102,8 +107,9 @@ class TaskSolver(object):
                 exit(1)
 
             receipt_queue = [init_alpha+str(x) for x in num_list]
-        else: #direction == 0
-            receipt_queue = receipt
+        else: # do todo_list
+            log.info("redo todo list")
+            receipt_queue = task_dict['todo'].split(",")
 
         lastSuccessReciept = ""
         total = len(receipt_queue)
@@ -126,7 +132,11 @@ class TaskSolver(object):
                     density.append(-1)
             cnt+=1
 
-        trend = self.resultAnalysis(density)
+        if task_dict['todo'] == None:
+            trend = self.resultAnalysis(density)
+        else:
+            trend = 0
+
         result = {
                 'success':len(filter(lambda i:i > 0, density)),
                 'error':len(filter(lambda i:i < 0, density)),
