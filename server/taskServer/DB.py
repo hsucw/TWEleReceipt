@@ -19,17 +19,17 @@ def updateTask(targetTask):
     if len(res)==1:
         task = res[0]
         task.queued = False
-        task.solved=False
         task.todo = targetTask['todo']
         task.date = targetTask['date']
         task.succ = targetTask['succ']
+        task.fail_cnt = targetTask['fail_cnt']
+        if task.succ == task.distance or \
+            task.fail_cnt >= 5:
+            task.solved = True
         task.save()
         log.info("update task:{}".format(task))
     else:
         log.info("cannot find target task")
-
-
-
 
 def getTask():
 
@@ -62,10 +62,6 @@ def addTaskWithTwoDirection( task ):
 
 def addTask( task ):
 
-    log.info("---add task---")
-    log.info(task)
-    log.info("---task added----")
-
     tskDate = datetime.strptime(task['date'],"%Y/%m/%d")
 
     if tskDate.date() > date.today():
@@ -92,14 +88,14 @@ def addTask( task ):
 
 def reportTask( taskReport ):
     task = taskReport['task']
+    updateTask(task)
+
     statistics = taskReport['result']
-    task = Task.objects.filter( id=task['id'] )
-    if task:
-        task = task[0]
-        task.solved = True
-        task.save()
+    t = Task.objects.filter( id=task['id'] )
+    if t:
+        t=t[0]
         TaskStatistics.objects.create(
-            task = task,
+            task = t,
             time = statistics['time'],
             success = statistics['success'],
             error = statistics['error'],

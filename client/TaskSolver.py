@@ -145,6 +145,7 @@ class TaskSolver(object):
                 'guess':trend
                 }
         receipt = self.receipt_done
+        task_dict['succ']+=result['success']
         return_data = {'result':result,'receipt':self.receipt_done,'task':task_dict}
 
         return return_data

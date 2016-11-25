@@ -8,3 +8,4 @@ server/lib*
 *.swp
 .ropeproject/
 DB/
+analysis/data/

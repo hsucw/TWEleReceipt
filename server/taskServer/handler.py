@@ -94,6 +94,7 @@ def reportTask( request ):
         queryResult = taskReport['result']
 
         DB.reportTask( taskReport )
+
         if queryResult['success'] > 0:
             DB.storeData( taskReport['receipt'] )
 
@@ -105,7 +106,6 @@ def reportTask( request ):
         distance = curTask['distance']
         todo = curTask['todo']
 
-        total_success = queryResult['success'] + curTask['succ']
 
         if changeDay > 0.5:
             newDate = Helper.modifyDate(curTask['date'], 1*direction)
@@ -113,20 +113,19 @@ def reportTask( request ):
             newDate = curTask['date']
 
         # mostly solved can create one job
-        if total_success*1.0/distance > 0.8:
+        if curTask['succ']*1.0/distance > 0.8:
             newTask = curTask.copy()
             newTask['fail_cnt']=0
             newTask['receipt']=Helper.modifyReceiptNum(curTask['receipt'], direction*distance)
             newTask['date'] = newDate
             DB.addTask(newTask)
-            log.info('create one task')
+            log.info('create one task: {}'.format(newTask))
 
         # Redo the remainders
-        if curTask['fail_cnt'] < 3:
+        if curTask['fail_cnt'] < 5 and len(fails)>0:
             curTask['fail_cnt']+=1
             curTask['todo']=','.join(fails)
             curTask['date'] = newDate
-            curTask['succ'] = total_success
             DB.updateTask(curTask)
         else:
             log.info( 'a task was terminated due to fail_cnt limit exceed')

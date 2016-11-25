@@ -36,6 +36,7 @@ class Task( models.Model ):
                 "fail_cnt": self.fail_cnt,
                 "solved": self.solved,
                 "todo": self.todo,
+                "succ": self.succ,
                 "queued": self.queued
             }
         )
