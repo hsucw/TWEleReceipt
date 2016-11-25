@@ -1,5 +1,5 @@
-function res = genNormalizedDaily(fname, target)
-    data = load(fname);
+function res = genNormalizedDaily(data, target)
+    #data = load(fname);
 
     x = target;
     y = size(data,1);
@@ -7,8 +7,9 @@ function res = genNormalizedDaily(fname, target)
     trans_matx = genTransMatrix(x,y);
     res = trans_matx*data./(y/x);
     
-    freq_fname=strrep(fname, ".txt", "_nor.csv");
-    csvwrite("out.csv", res);
+    #freq_fname=strrep(fname, ".txt", "_nor.csv");
+    #csvwrite("out.csv", res);
     
     return; 
 end
+

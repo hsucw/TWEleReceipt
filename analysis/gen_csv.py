@@ -24,7 +24,7 @@ c.execute(cmd,(taxid,))
 for dt in c:
     date = list(dt)[0]
     d=conn.cursor()
-    cmd = 'select * from {} where taxid = ? and date = ?'.format(tbl_name)
+    cmd = 'select * from {} where taxid = ? and date = ? order by receipt asc'.format(tbl_name)
     d.execute(cmd, (taxid, date))
 
     fname = "{}/{}/{}.csv".format(DATA_DIR,taxid,date.replace('/','-'))
