@@ -54,17 +54,20 @@ class Connector(object):
     def getPath(self, path="/"):
 
         self.__initConnections__( path )
-    
+
         while True:
             try:
                 self.res = self.conn.getresponse()
             except httplib.ResponseNotReady:
-
                 log.debug ("retry after 3 seconds...")
                 time.sleep( 3 )
                 continue
-            else:
-                break
+            except Exception, e:
+                #if errorcode==errno.ECONNREFUSED:
+                #    log.error("Connection Refused")
+                #else:
+                print e
+                self.__initConnections__( path )
 
         for header in self.res.getheaders():
             if header[0] == 'set-cookie':
@@ -107,7 +110,7 @@ class Connector(object):
             except (httplib.ResponseNotReady ,httplib.BadStatusLine):
 
                 log.info("retry")
-                time.sleep( 3 ) 
+                time.sleep( 3 )
                 self.conn = httplib.HTTPSConnection(self.domain)
                 self.setReqHeader()
                 self.conn.request("POST", path, params, headers=self.headers)

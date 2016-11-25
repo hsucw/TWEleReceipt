@@ -101,7 +101,7 @@ class TaskSolver(object):
                 num_list = range(number,number+direction*distance)
             elif direction == -1:
                 # XX12345600, -1  -> ~600, 599, 598, 597
-                num_list = list(reversed(range(number, number+distance-1)))
+                num_list = list(reversed(range(number, number+distance)))
             else:
                 log.error("Unknown distance")
                 exit(1)
@@ -113,7 +113,7 @@ class TaskSolver(object):
 
         lastSuccessReciept = ""
         total = len(receipt_queue)
-        cnt = 1
+        cnt = 0
         for query_rcpt in receipt_queue:
             log.info("task solving...{}/{}".format(cnt, total))
             res = self.Query(query_rcpt, date)
@@ -140,10 +140,10 @@ class TaskSolver(object):
         result = {
                 'success':len(filter(lambda i:i > 0, density)),
                 'error':len(filter(lambda i:i < 0, density)),
-                'lastSuccessReceipt': lastSuccessReciept,
                 'fail':fails,
                 'guess':trend
                 }
+        task_dict['todo'] = None
         receipt = self.receipt_done
         task_dict['succ']+=result['success']
         return_data = {'result':result,'receipt':self.receipt_done,'task':task_dict}
