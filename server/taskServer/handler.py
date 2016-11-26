@@ -52,6 +52,7 @@ def __repackTask__( task ):
 
 
 
+@csrf_exempt
 # add task by client submitted qr code
 def addTask( request ):
 
@@ -113,7 +114,7 @@ def reportTask( request ):
             newDate = curTask['date']
 
         # mostly solved can create one job
-        if curTask['succ']*1.0/distance > 0.8:
+        if curTask['succ']*1.0/distance > 0.4:
             newTask = curTask.copy()
             newTask['fail_cnt']=0
             newTask['receipt']=Helper.modifyReceiptNum(curTask['receipt'], direction*distance)

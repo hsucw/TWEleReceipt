@@ -6,6 +6,8 @@ import time
 from datetime import datetime, timedelta, date
 import hashlib
 from utils.Exceptions import DateOverFlowError, TaskAlreadyExistsError, DateOutOfRangeError
+from django.db import IntegrityError
+import random
 
 def taskTimeOut( delay, id ):
     time.sleep( delay )
@@ -15,20 +17,31 @@ def taskTimeOut( delay, id ):
         task[0].save()
 
 def updateTask(targetTask):
-    res = Task.objects.filter(id=targetTask['id'])
-    if len(res)==1:
-        task = res[0]
+    task = Task.objects.get(id=targetTask['id'])
+    #res = Task.objects.filter(id=targetTask['id'])
+    #if len(res)==1:
+    if task is not None:
+        #task = res[0]
         task.queued = False
         task.todo = targetTask['todo']
         task.date = targetTask['date']
         task.succ = targetTask['succ']
         task.fail_cnt = targetTask['fail_cnt']
-        if task.succ == task.distance or \
+        if task.succ >= task.distance or \
             task.fail_cnt >= 5:
             task.solved = True
-        task.save()
-        log.info("update task:{}".format(task))
+        try:
+            task.save()
+            log.info("update task:{} {} {}".format(task.id,task.receipt,task.date))
+        except IntegrityError:
+        #except Exception as e:
+            #task.delete()
+            #task.delete()
+            #ntk = task
+            #addTask(targetTask)
+            log.error("re-make task:{} {} {}".format(task.id,task.receipt, task.date))
     else:
+        addTask(targetTask)
         log.info("cannot find target task")
 
 def getTask():
@@ -39,7 +52,9 @@ def getTask():
 
     if Task.objects.filter(solved=False, queued=False):
 
-        task = Task.objects.filter(solved=False, queued=False)[0]
+        task_list = Task.objects.filter(solved=False, queued=False)
+        pick_index = random.randint(0,len(task_list)-1)
+        task = task_list[pick_index]
         task.queued = True
         task.save()
         thread.start_new_thread( taskTimeOut, (30, task.id))

@@ -42,7 +42,7 @@ class HTMLDataResolver(object):
 
     def __init__(self):
         pass
-    
+
     def parseUTF8(self,instr):
         """ transform the text """
         outstr = ""
@@ -55,7 +55,7 @@ class HTMLDataResolver(object):
             except ValueError:
                 continue
             except:
-                log.warn("Unknown unichr error")
+                log.debug("Unknown unichr error")
         return outstr
 
     def findtheData(self,items):
@@ -69,30 +69,30 @@ class HTMLDataResolver(object):
                         field = self.parseUTF8(items[i+j].text())
                     except Exception as e:
                         if text['com'] == no_data_rec_str:
-                            log.warn("Record not found")
+                            log.debug("Record not found")
                             raise NoRecord
                         else:
                             raise NotCorrectFormat
                     text[col]=field
                     j += 1
                 return text
-        log.warn("Not found the number in response HTML")
+        log.debug("Not found the number in response HTML {}".format(items.html()))
         raise NotFoundResult
 
     def resolve(self, content):
         """resolve the html dom"""
+        if  password_error_str in content:
+            log.debug( password_error_msg )
+            return None
+        elif query_receipt_data_error_str in content:
+            log.debug( query_unknown_error )
+            return None
+        elif no_data_rec_str in content:
+            return {}
+
         dom = htmldom.HtmlDom().createDom(content)
 
         items = dom.find("table[class=lpTb] tr td")
-        if items.length() is 0:
-
-            if  password_error_str in content:
-                log.error( password_error_msg )
-            elif query_receipt_data_error_str in content:
-                log.error( query_unknown_error )
-                time.sleep(1)
-                return None
-            return None
 
         try:
             data = self.findtheData(items)
@@ -101,7 +101,7 @@ class HTMLDataResolver(object):
         except NoRecord:
             data = {}
         except NotCorrectFormat:
-            data = None
+            data = {}
         return data
 
     def findDetail(self, content):

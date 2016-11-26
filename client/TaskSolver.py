@@ -37,34 +37,26 @@ class TaskSolver(object):
     def Query(self, receipt, receipt_date):
 
         res = None
-
-
         while res is None:
             if not self.c.session_valid:
-                del self.c
-                self.c = Connector()
-                self.c.imgRslr.reportFail(self.c.imgCode, self.c.imgSHA)
+                #del self.c
+                #self.c = Connector()
                 self.c.resolveImg()
-            #log.info('[{}]Get Image {}:{}'.format(self.c.res.reason, self.c.tmp_file, self.c.imgCode))
-            #log.info('{} and {}'.format(receipt , receipt_date))
             self.c.setPostData(receipt, receipt_date )
             self.c.postForm( self.c.postPath )
-            #log.info('[{} {}]Post data'.format(self.c.res.status,self.c.res.reason))
             res = self.c.getInfo()
 
             with open("out.html" , "w") as outFd:
                 outFd.write(self.c.body)
 
-
-
         if not self.c.info:
             return False
         else:
-            log.info("===[Query Result]===")
+            #log.info("===[Query Result]===")
             receipt = self.c.info
             receipt['money'] = receipt['money'].replace(',','')
-            for k,r in receipt.iteritems():
-                print k+":\t\t"+r
+            #for k,r in receipt.iteritems():
+            #    print k+":\t\t"+r
 
             self.receipt_done[self.c.info['id']] = (receipt['date'],receipt['money'],receipt['taxid'])
             return True
@@ -103,6 +95,7 @@ class TaskSolver(object):
         direction = task_dict['direction']
         receipt = task_dict['receipt']
 
+        log.debug(task_dict)
 
         if task_dict['todo'] == None:
             log.info("resolve new task")
@@ -117,7 +110,7 @@ class TaskSolver(object):
                 log.error("Unknown distance")
                 exit(1)
 
-            receipt_queue = [init_alpha+str(x) for x in num_list]
+            receipt_queue = [init_alpha+"{:08d}".format(x) for x in num_list]
         else: # do todo_list
             log.info("redo todo list")
             receipt_queue = task_dict['todo'].split(",")
@@ -126,9 +119,9 @@ class TaskSolver(object):
         total = len(receipt_queue)
         cnt = 0
         for query_rcpt in receipt_queue:
+            #log.debug("{}".format(query_rcpt))
             progress(cnt, total, query_rcpt)
             res = self.Query(query_rcpt, date)
-
             if res is True:
                 if len(density) != 0 and density[-1] > 0:
                     density.append(density[-1]+1)
@@ -182,15 +175,15 @@ class TaskSolver(object):
             time_delta = time.time() - time_start
             result['result']['time'] = time_delta
 
-            log.info( "\n=====================statistics===================\n" )
+            #log.info( "\n=====================statistics===================\n" )
             receiptHasdata = result['result']['success']
             receiptFailed = result['result']['error']
-            log.info( "receipt / s : {}\n".format( task_dict['distance']/time_delta ) )
-            log.info( "average time consume for each receipt : {}s\n".format( time_delta/task_dict['distance'] ) )
-            log.info( "hit rate ( receipt has data / total receipt ) : {}%\n".format( receiptHasdata / task_dict['distance']  * 100) )
-            log.info( "correct receipt / sec : {}\n".format( receiptHasdata/time_delta ) )
-            log.info( "missing rate : {}%\n".format( receiptFailed/task_dict['distance'] ) )
-            log.info( "\n==================================================\n" )
+            #log.info( "receipt / s : {}\n".format( task_dict['distance']/time_delta ) )
+            #log.info( "average time consume for each receipt : {}s\n".format( time_delta/task_dict['distance'] ) )
+            #log.info( "hit rate ( receipt has data / total receipt ) : {}%\n".format( receiptHasdata / task_dict['distance']  * 100) )
+            #log.info( "correct receipt / sec : {}\n".format( receiptHasdata/time_delta ) )
+            #log.info( "missing rate : {}%\n".format( receiptFailed/task_dict['distance'] ) )
+            #log.info( "\n==================================================\n" )
 
             log.info( "send : \n{}".format(result) )
             requests.post(self.server+'/api/reportTask/', data=json.dumps( result ))
