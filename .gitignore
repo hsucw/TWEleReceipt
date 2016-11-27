@@ -9,3 +9,4 @@ server/lib*
 .ropeproject/
 DB/
 analysis/data/
+*.sqlite3

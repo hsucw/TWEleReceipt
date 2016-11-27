@@ -17,29 +17,48 @@ def taskTimeOut( delay, id ):
         task[0].save()
 
 def updateTask(targetTask):
-    task = Task.objects.get(id=targetTask['id'])
+    t = Task.objects.get(id=targetTask['id'])
     #res = Task.objects.filter(id=targetTask['id'])
     #if len(res)==1:
-    if task is not None:
-        #task = res[0]
-        task.queued = False
-        task.todo = targetTask['todo']
-        task.date = targetTask['date']
-        task.succ = targetTask['succ']
-        task.fail_cnt = targetTask['fail_cnt']
+    if t is not None:
+        """
         if task.succ >= task.distance or \
-            task.fail_cnt >= 5:
-            task.solved = True
+                task.fail_cnt >= 5:
+            sol = True
+        #task = res[0]
+        task.update(
+                queued = False,
+                todo = targetTask['todo'],
+                date = targetTask['date'],
+                succ = targetTask['succ'],
+                fail_cnt = targetTask['fail_cnt'],
+                solved = sol
+        )
+        """
+        t.queued = False
+        t.todo = targetTask['todo']
+        t.date = targetTask['date']
+        t.succ = targetTask['succ']
+        t.fail_cnt = targetTask['fail_cnt']
+        if t.succ >= t.distance or \
+            t.fail_cnt >= 5:
+            t.solved = True
         try:
-            task.save()
-            log.info("update task:{} {} {}".format(task.id,task.receipt,task.date))
+            t.save()
+            log.info("update task:{} {} {} {}".format(t.id,t.receipt,t.date, t.fail_cnt))
         except IntegrityError:
+        # should fix the bug
         #except Exception as e:
             #task.delete()
             #task.delete()
+            #task.solved = True
+            #task.fail_cnt = 5
+            t.delete()
             #ntk = task
+            #t.save()
             #addTask(targetTask)
-            log.error("re-make task:{} {} {}".format(task.id,task.receipt, task.date))
+            log.error("delete task:{} {} {} {}".format(t.id, t.date, t.fail_cnt, t.todo))
+
     else:
         addTask(targetTask)
         log.info("cannot find target task")

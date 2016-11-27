@@ -4,11 +4,12 @@ import sys
 import numpy as np
 import os
 
-if len(sys.argv) < 2:
-    print "usage: genNormalizedDaily.py filename"
+if len(sys.argv) < 3:
+    print "usage: genNormalizedDaily.py filename interval"
     exit(1)
 else:
     fname = sys.argv[1]
+    interval = sys.argv[2]
 
 print "open csv file:{}".format(fname)
 
@@ -24,11 +25,13 @@ x = np.array(data, dtype=int)[np.newaxis]
 x = np.transpose(x)
 
 
-#octave.addpath('.')
-#res = octave.genNormalizedDaily(x,24)
+octave.addpath('.')
+res = octave.genNormalizedDaily(x, interval)
 #print res
-
-outdir = os.path.dirname(fname)
-outbase = os.path.basename(fname)
-outfname = os.path.basename(fname)
+outfname = os.path.splitext(fname)[0]+"_norm_{}".format(interval)+os.path.splitext(fname)[1]
 print outfname
+
+with open(outfname, 'w') as csvfile:
+    writer = csv.writer(csvfile, delimiter=',', quotechar='|')
+    for row in res:
+        writer.writerow(row)

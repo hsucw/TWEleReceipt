@@ -1,23 +1,17 @@
-function res = genFrequencyRatio(fname, range, max_range)
+function res = genFrequencyRatio(data, unit, num_unit)
 
-    data = load(fname);
-    data = floor(data./range);
+    data = floor(data./unit);
     
     total_num = size(data, 1);
 
-    min(data);
-    max(data);
-    interval = ceil(max_range/range);
-    
+    res = zeros(num_unit, 1);
 
-    res = zeros(interval, 1);
-
-    for i=1:interval
+    for i=1:num_unit
         res(i,:)=size( find(data <= i-1), 1)/total_num;
     end
 
-    freq_fname=strrep(fname, ".txt", "_frq.csv");
-    csvwrite(freq_fname, res);
+    #freq_fname=strrep(fname, ".txt", "_frq.csv");
+    #csvwrite(freq_fname, res);
 
 
     return;

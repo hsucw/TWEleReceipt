@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import sqlite3
 import sys
 import csv
@@ -10,6 +11,7 @@ DATA_DIR="./data"
 if len(sys.argv) < 2:
     print "usage:"
     print "python gen_csv.py [taxid]"
+    exit(1)
 else:
     taxid = sys.argv[1]
 

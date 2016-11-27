@@ -4,6 +4,9 @@ function res = genNormalizedDaily(data, target)
     x = target;
     y = size(data,1);
 
+    disp(target)
+    disp(x)
+
     trans_matx = genTransMatrix(x,y);
     res = trans_matx*data./(y/x);
     
