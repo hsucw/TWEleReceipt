@@ -35,9 +35,20 @@ def readFileFreq(fname, unit, num):
     except Exception as e:
         print e
 
+def readDailyIncome(fname):
+    try:
+        with open(fname, 'r') as fd:
+            lines = fd.read().splitlines()[1:]
+            total = [float(e.split(',')[2]) for e in lines]
+            return sum(total)
+    except Exception as e:
+        print e
+
+
 def combineTaxID(taxid, intval=24, unit=20, num=50):
     freq_data = {}
     norm_data = {}
+    daily_data = {}
 
     f = []
     for (dirpath, dirnames, fnames) in walk("data/{}".format(taxid)):
@@ -46,16 +57,20 @@ def combineTaxID(taxid, intval=24, unit=20, num=50):
                 continue
             if "freq" in fname:
                 continue
+            if "income" in fname:
+                continue
             if fname.split('.')[1] != "csv":
                 continue
             date = fname.split('.')[0]
             target_fname = dirpath+"/"+fname
             norm_data[date] = readFileNorm(target_fname, intval)
             freq_data[date] = readFileFreq(target_fname, unit, num)
+            daily_data[date]= readDailyIncome(target_fname)
         #break
 
     outNormFname = "data/{}/{}_norm.csv".format(taxid, taxid)
     outFreqFname = "data/{}/{}_freq.csv".format(taxid, taxid)
+    outIncoFname = "data/{}/{}_income.csv".format(taxid, taxid)
     with open(outNormFname,'wb') as f:
         w = csv.writer(f,  delimiter=',', quotechar='|')
         for key, value in norm_data.items():
@@ -67,6 +82,12 @@ def combineTaxID(taxid, intval=24, unit=20, num=50):
         for key, value in freq_data.items():
             value.insert(0, key)
             w.writerow(value)
+
+    with open(outIncoFname,'wb') as f:
+        w = csv.writer(f,  delimiter=',', quotechar='|')
+        for key, value in daily_data.items():
+            #value.insert(0, key)
+            w.writerow((key,value))
 
     #with open(outFreqFname,'wb') as f:
     #    w = csv.writer(f)

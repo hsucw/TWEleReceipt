@@ -36,7 +36,7 @@ def genFreqRatio(fname, unit, num):
         for row in reader:
             data.append(row[2])
 
-    x = np.array(data, dtype=int)[np.newaxis]
+    x = np.array(data, dtype=float)[np.newaxis]
     x = np.transpose(x)
 
     octave.addpath('.')

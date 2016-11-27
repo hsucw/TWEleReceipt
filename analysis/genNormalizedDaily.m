@@ -9,7 +9,8 @@ function res = genNormalizedDaily(data, target)
 
     trans_matx = genTransMatrix(x,y);
     res = trans_matx*data./(y/x);
-    
+    #res = trans_matx*data
+
     #freq_fname=strrep(fname, ".txt", "_nor.csv");
     #csvwrite("out.csv", res);
     
