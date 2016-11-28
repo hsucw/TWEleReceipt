@@ -1,9 +1,9 @@
-from django.http import HttpResponse
+tfrom django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from utils.Exceptions import TaskAlreadyExistsError, DateOverFlowError
 from django.conf import settings
 
-import logging as log
+import logging
 import DB
 import json
 import Helper
@@ -13,14 +13,15 @@ import traceback
 import sys
 
 
-
-log.basicConfig(level=log.DEBUG)
+logging.basicConfig(level=logging.INFO)
+srvlog = logging.getLogger("SEVR")
 
 
 # send the task to client
 def getTask( request ):
 
     task = DB.getTask()
+
 
     return HttpResponse( task  , content_type='application/json')
 
@@ -46,13 +47,13 @@ def __repackTask__( task ):
     retTask[ 'fail_cnt' ] = 0
 
 
-    log.debug( "{}, {} has been received".format( retTask['receipt'] , retTask['date'] ) )
+    srvlog.info( "{}, {} has been received".format( retTask['receipt'] , retTask['date'] ) )
 
     return retTask
 
 
 
-@csrf_exempt
+#@csrf_exempt
 # add task by client submitted qr code
 def addTask( request ):
 
@@ -60,20 +61,20 @@ def addTask( request ):
         if request.method == 'POST':
 
             task = urlparse.parse_qs( request.body )
-            log.debug(task)
+            srvlog.debug(task)
             task = __repackTask__( task )
 
-            log.debug(task)
+            srvlog.debug(task)
             DB.addTaskWithTwoDirection( task )
 
     except DateOverFlowError:
-        log.error( 'date out of range' )
+        srvlog.error( 'date out of range' )
         return HttpResponse( 'date out of range' )
     except TaskAlreadyExistsError:
-        log.error( 'receipt already in record' )
+        srvlog.error( 'receipt already in record' )
         return HttpResponse( 'receipt already in record' )
     except Exception, e:
-        log.error( str(e) )
+        srvlog.error( str(e) )
         traceback.print_exc(file=sys.stdout)
         return HttpResponse( 'add Task Failed' )
 
@@ -89,7 +90,7 @@ def addTask( request ):
 def reportTask( request ):
     if request.method == 'POST':
 
-        log.debug( request.body )
+        srvlog.debug( request.body )
 
         taskReport = json.loads( request.body )
         queryResult = taskReport['result']
@@ -99,7 +100,7 @@ def reportTask( request ):
         if queryResult['success'] > 0:
             DB.storeData( taskReport['receipt'] )
 
-        changeDay = queryResult['guess']
+        guess = queryResult['guess']
         fails = queryResult['fail']
         curTask = taskReport['task'].copy()
 
@@ -107,35 +108,64 @@ def reportTask( request ):
         distance = curTask['distance']
         todo = curTask['todo']
 
-
-        if changeDay > 0.5:
-            newDate = Helper.modifyDate(curTask['date'], 1*direction)
+        if guess > 0.2:
+            change = True
         else:
-            newDate = curTask['date']
+            change = False
 
-        # mostly solved can create one job
-        if curTask['succ']*1.0/distance > 0.4:
+        if curTask['succ']*1.0/distance > 0.3:
+            genNew = True
+        else:
+            genNew = False
+
+        newDate = Helper.modifyDate(curTask['date'], 1*direction)
+        newReceipt = Helper.modifyReceiptNum(curTask['receipt'], direction*distance)
+
+        if change and genNew:
             newTask = curTask.copy()
-            newTask['fail_cnt']=0
-            newTask['receipt']=Helper.modifyReceiptNum(curTask['receipt'], direction*distance)
             newTask['date'] = newDate
+            newTask['fail_cnt'] = 0
+            newTask['todo'] = []
+            newTask['receipt'] = newReceipt
             DB.addTask(newTask)
-            log.info('create one task: {}'.format(newTask))
 
-        # Redo the remainders
-        if curTask['fail_cnt'] < 5 and len(fails)>0:
-            curTask['fail_cnt']+=1
+            curTask['fail_cnt']+= 3
             curTask['todo']=','.join(fails)
-            curTask['date'] = newDate
             DB.updateTask(curTask)
-        else:
-            log.info( 'a task was terminated due to fail_cnt limit exceed')
 
+            oldTask = curTask.copy()
+            oldTask['date'] = newDate
+            DB.addTask(oldTask)
+
+        elif not change and genNew:
+            newTask = curTask.copy()
+            newTask['fail_cnt'] = 0
+            newTask['todo'] = []
+            newTask['receipt'] = newReceipt
+            DB.addTask(newTask)
+
+            curTask['fail_cnt']+= 2
+            curTask['todo']=','.join(fails)
+            DB.updateTask(curTask)
+
+        elif change and not genNew:
+            curTask['fail_cnt']+= 3
+            curTask['todo']=','.join(fails)
+            DB.updateTask(curTask)
+
+            oldTask = curTask.copy()
+            oldTask['date'] = newDate
+            DB.addTask(oldTask)
+
+        else: #not change and not genNew
+            curTask['fail_cnt']+= 1
+            curTask['todo']=','.join(fails)
+            DB.updateTask(curTask)
 
         return HttpResponse('report recorded')
 
     else:
-        log.info( "a client send an invalid request {}".format( request.body ) )
+        srvlog.info( "a client send an invalid request {}".format( request.body ) )
         return HttpResponse( 'Invalid Request' )
 
 

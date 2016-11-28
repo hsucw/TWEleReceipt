@@ -41,6 +41,8 @@ function res = genTransMatrix( x, y)
         res = res';
     end
 
+    disp("TansMatrix Done")
+
     %if size(res,1) != x || size(res,2) != y
     %    disp("error");
     %    disp(res);

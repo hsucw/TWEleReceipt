@@ -1,7 +1,12 @@
+#!/usr/bin/env python
 import httplib, urllib
 import os, sys
 import csv
 from htmldom import htmldom
+
+if len(sys.argv) < 2:
+    print "input the receipt file name"
+    exit(1)
 
 
 conn = httplib.HTTPConnection("127.0.0.1:8000")
@@ -27,7 +32,7 @@ csrfmiddleware =  items.html().replace(">"," ").split(" ")[3].split("=")[1][1:-1
 
 
 
-with open('receipt.csv', 'rU') as csvfile:
+with open(sys.argv[1] , 'rU') as csvfile:
     reader = csv.reader(csvfile, delimiter=',', quotechar='|')
     for row in reader:
         params = {}
