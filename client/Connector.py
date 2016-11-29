@@ -85,6 +85,7 @@ class Connector(object):
 
             time.sleep( 3 )
             self.imgCode, self.imgSHA = self.imgRslr.resolveImg(self.body)
+
         return self.imgCode
 
     def setPostData(self, num, date):
