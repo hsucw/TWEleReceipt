@@ -16,7 +16,6 @@ class Receipt( models.Model ):
 class Task( models.Model ):
     receipt = models.TextField()
     date = models.TextField()
-    date_guess = models.IntegerField()
     direction = models.IntegerField()
     distance = models.IntegerField(default=100)
     fail_cnt = models.IntegerField(default=0)
@@ -30,7 +29,6 @@ class Task( models.Model ):
                 "id": self.id,
                 "receipt": self.receipt,
                 "date": self.date,
-                "date_guess": self.date_guess,
                 "direction": self.direction,
                 "distance": self.distance,
                 "fail_cnt": self.fail_cnt,

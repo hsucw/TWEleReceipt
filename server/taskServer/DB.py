@@ -19,41 +19,32 @@ def taskTimeOut( delay, id ):
         task[0].queued = False
         task[0].save()
 
-def updateTask(targetTask):
-    t = Task.objects.get(id=targetTask['id'])
-    #res = Task.objects.filter(id=targetTask['id'])
-    #if len(res)==1:
-    if t is not None:
-        t.queued = False
-        t.todo = targetTask['todo']
-        t.date = targetTask['date']
-        t.succ = targetTask['succ']
-        t.fail_cnt = targetTask['fail_cnt']
-        if t.succ >= t.distance or \
-            t.fail_cnt >= 5:
-            t.solved = True
-        try:
-            t.save()
-            dblog.info("update task:{} {} {} {}".format(t.id,t.receipt,t.date, t.fail_cnt))
-        except IntegrityError:
-            t.delete()
-            dblog.info("delete task because of duplicated")
+def getTaskObject(rcpt, dt):
+    #dblog.info("get object by {} {}".format(rcpt, dt))
+    try:
+        return Task.objects.get(receipt=rcpt, date=dt)
+    except Exception, e:
+        dblog.debug("*_*_*_*_*_*_* Cannot get object {} {}".format(rcpt, dt))
+        dblog.debug(e)
+        return None
 
-    else:
-        addTask(targetTask)
-        dblog.info("cannot find target task")
+def createTaskObject(rcpt, dt, dirtn):
+    #dblog.info("create object by {} {}".format(rcpt, dt, dirtn))
+    try:
+        return Task.objects.create(receipt=rcpt, date=dt, direction=dirtn)
+    except Exception, e:
+        dblog.debug("*_*_*_*_*_*_* Cannot create object {} {} {}".format(rcpt,dt,dirtn))
+        dblog.debug(e)
+        return None
+
 
 def getTask():
 
-    tasks = Task.objects.filter( queued=False, solved = False )
-
+    tasks = Task.objects.filter( queued=False, solved = False ).order_by('-fail_cnt')
     dblog.info( "Tasks remain : {}" .format( len( tasks ) ))
 
-    if Task.objects.filter(solved=False, queued=False):
-
-        task_list = Task.objects.filter(solved=False, queued=False)
-        pick_index = random.randint(0,len(task_list)-1)
-        task = task_list[pick_index]
+    if tasks:
+        task = tasks[0]
         task.queued = True
         task.save()
         thread.start_new_thread( taskTimeOut, (30, task.id))
@@ -77,20 +68,18 @@ def addTaskWithTwoDirection( task ):
 def addTask( task ):
 
     tskDate = datetime.strptime(task['date'],"%Y/%m/%d")
-
     if tskDate.date() > date.today():
-        dblog.info("Cannot add task, dateOverToday:{}".format(tskDate.date()))
+        dblog.warn("Cannot add task, dateOverToday:{}".format(tskDate.date()))
         return
     if task['fail_cnt'] >= 5:
-        dblog.info("Cannot add task, fail count limit")
+        dblog.warn("Cannot add task, fail count limit")
         return
 
     #if len( Task.objects.filter(receipt = task['receipt']) ) == 0 :
     try:
-        Task.objects.get_or_create(
+        Task.objects.create(
             receipt = task['receipt'],
             date = task['date'],
-            date_guess = task['date_guess'],
             direction = task['direction'],
             distance = task['distance'],
             fail_cnt = task['fail_cnt'],
@@ -98,9 +87,7 @@ def addTask( task ):
     except Exception, e:
         dblog.error( str(e) )
         #traceback.print_exc(file=sys.stdout)
-        dblog.info("Cannot add Task, already exists")
-        # should not use error
-        #raise TaskAlreadyExistsError(task)
+        dblog.warn("Cannot add Task, already exists")
 
     return
 
@@ -123,7 +110,7 @@ def reportTask( taskReport ):
     return
 
 def storeData( receipts ):
-    dblog.info("store data: {}".format(receipts))
+    dblog.debug("store data: {}".format(receipts))
     for receipt, vals in receipts.iteritems():
         Receipt.objects.get_or_create(
             receipt = receipt,

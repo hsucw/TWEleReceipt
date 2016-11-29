@@ -1,4 +1,4 @@
-tfrom django.http import HttpResponse
+from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from utils.Exceptions import TaskAlreadyExistsError, DateOverFlowError
 from django.conf import settings
@@ -41,7 +41,6 @@ def __repackTask__( task ):
     retTask[ 'date'] = '/'.join((y,m,d))
     date = datetime.date( int(y),int(m),int(d) )
 
-    retTask[ 'date_guess' ] = 0
     retTask[ 'direction' ] = 1
     retTask[ 'distance' ] = settings.RECEIPT_DISTANCE
     retTask[ 'fail_cnt' ] = 0
@@ -94,73 +93,68 @@ def reportTask( request ):
 
         taskReport = json.loads( request.body )
         queryResult = taskReport['result']
-
-        DB.reportTask( taskReport )
-
-        if queryResult['success'] > 0:
-            DB.storeData( taskReport['receipt'] )
-
+        task = taskReport['task']
+        direction = task['direction']
+        distance = task['distance']
+        todo = task['todo']
         guess = queryResult['guess']
         fails = queryResult['fail']
-        curTask = taskReport['task'].copy()
 
-        direction = curTask['direction']
-        distance = curTask['distance']
-        todo = curTask['todo']
+        curDate =  task['date']
+        curReceipt = task['receipt']
+        curTask = DB.getTaskObject(curReceipt,curDate)
 
-        if guess > 0.2:
-            change = True
-        else:
-            change = False
+        try:
+            curTask.queued = False
+        except Exception, e:
+            srvlog.error("*_*_*_: No Such Current Task {} {} {}".format(curReceipt, curDate, direction))
+            srvlog.error(e)
+            return HttpResponse('no such record')
 
-        if curTask['succ']*1.0/distance > 0.3:
+        nextDate = Helper.modifyDate(task['date'], 1*direction)
+        nextReceipt = Helper.modifyReceiptNum(task['receipt'], direction*distance)
+
+        lastDate = Helper.modifyDate(task['date'], 1*direction)
+        lastReceipt = Helper.modifyReceiptNum(task['receipt'], -1*direction*distance)
+        lastTask = DB.getTaskObject(lastReceipt,lastDate)
+
+
+        DB.reportTask( taskReport )
+        genNew = False
+        if queryResult['success'] > 0:
+            DB.storeData( taskReport['receipt'] )
             genNew = True
+
+        if genNew:
+            nextTask = DB.createTaskObject(nextReceipt,curDate, direction)
+            if nextTask:
+                nextTask.save()
+
+            if lastTask:
+                lastTask.fail_cnt = 5
+                lastTask.solved = True
+                lastTask.save()
+
+            if curTask:
+                curTask.fail_cnt+=1
+                curTask.succ = distance - len(fails)
+                curTask.todo = ','.join(fails)
+                curTask.save()
+
         else:
-            genNew = False
+            if curTask:
+                curTask.fail_cnt+=4
+                if curTask.fail_cnt >= 5:
+                    curTask.solved = True
+                curTask.date = nextDate
+                curTask.todo = ','.join(fails)
+                curTask.succ = distance - len(fails)
+                curTask.save()
 
-        newDate = Helper.modifyDate(curTask['date'], 1*direction)
-        newReceipt = Helper.modifyReceiptNum(curTask['receipt'], direction*distance)
-
-        if change and genNew:
-            newTask = curTask.copy()
-            newTask['date'] = newDate
-            newTask['fail_cnt'] = 0
-            newTask['todo'] = []
-            newTask['receipt'] = newReceipt
-            DB.addTask(newTask)
-
-            curTask['fail_cnt']+= 3
-            curTask['todo']=','.join(fails)
-            DB.updateTask(curTask)
-
-            oldTask = curTask.copy()
-            oldTask['date'] = newDate
-            DB.addTask(oldTask)
-
-        elif not change and genNew:
-            newTask = curTask.copy()
-            newTask['fail_cnt'] = 0
-            newTask['todo'] = []
-            newTask['receipt'] = newReceipt
-            DB.addTask(newTask)
-
-            curTask['fail_cnt']+= 2
-            curTask['todo']=','.join(fails)
-            DB.updateTask(curTask)
-
-        elif change and not genNew:
-            curTask['fail_cnt']+= 3
-            curTask['todo']=','.join(fails)
-            DB.updateTask(curTask)
-
-            oldTask = curTask.copy()
-            oldTask['date'] = newDate
-            DB.addTask(oldTask)
-
-        else: #not change and not genNew
-            curTask['fail_cnt']+= 1
-            curTask['todo']=','.join(fails)
-            DB.updateTask(curTask)
+            if lastTask:
+                lastTask.date = nextDate
+                lastTask.fail_cnt+=3
+                lastTask.save()
 
         return HttpResponse('report recorded')
 
