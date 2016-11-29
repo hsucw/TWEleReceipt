@@ -23,9 +23,8 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'f($nm#d(v*zmbxw_rhyhmt%*$)_p1l(&seal5gsml$ok2500^r'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = []
+DEBUG = False
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -126,11 +125,13 @@ STATICFILES_DIRS = (os.path.join('static'),)
 # self defined parameters
 
 
-# the date guess range for client receipt
-DATE_RANGE = 3
-
 # guess distance per task
 RECEIPT_DISTANCE = 100
+
+# the date guess range for client receipt
+# if RECEIPT_DISTANCE is not large, usually one day is enough
+DATE_RANGE = 1
+
 
 if os.getenv('DATABASE_URL') is not None:
     import dj_database_url

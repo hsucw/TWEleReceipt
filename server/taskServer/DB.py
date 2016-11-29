@@ -1,13 +1,18 @@
 from models import Task, Receipt, TaskStatistics
-import logging as log
+import logging
 import json
 import thread
 import time
-import datetime
+from datetime import datetime, timedelta, date
 import hashlib
 import Helper
 import traceback
 from utils.Exceptions import DateOverFlowError, TaskAlreadyExistsError, DateOutOfRangeError
+from django.db import IntegrityError
+import random
+
+logging.basicConfig(level=logging.INFO)
+dblog = logging.getLogger("DB")
 
 def taskTimeOut( delay, id ):
     time.sleep( delay )
@@ -16,15 +21,30 @@ def taskTimeOut( delay, id ):
         task[0].queued = False
         task[0].save()
 
+def getTaskObject(rcpt, dt):
+    #dblog.info("get object by {} {}".format(rcpt, dt))
+    try:
+        return Task.objects.get(receipt=rcpt, date=dt)
+    except Exception, e:
+        dblog.debug("*_*_*_*_*_*_* Cannot get object {} {}".format(rcpt, dt))
+        dblog.debug(e)
+        return None
+
+def createTaskObject(rcpt, dt, dirtn):
+    #dblog.info("create object by {} {}".format(rcpt, dt, dirtn))
+    try:
+        return Task.objects.create(receipt=rcpt, date=dt, direction=dirtn)
+    except Exception, e:
+        dblog.debug("*_*_*_*_*_*_* Cannot create object {} {} {}".format(rcpt,dt,dirtn))
+        dblog.debug(e)
+        return None
+
 
 def getTask():
 
-    tasks = Task.objects.filter( queued=False, solved=False )
-    receiptSize = len ( Receipt.objects.all() )
-    log.info( "==============================" )
-    log.info( "Tasks remain : {}" .format( len( tasks ) ))
-    log.info( "Receipt count : {}".format( receiptSize ) )
-    log.info( "==============================" )
+    tasks = Task.objects.filter( queued=False, solved = False ).order_by('-fail_cnt')
+    dblog.info( "Tasks remain : {}" .format( len( tasks ) ))
+
     if tasks:
         task = tasks[0]
         task.queued = True
@@ -32,7 +52,7 @@ def getTask():
         thread.start_new_thread( taskTimeOut, (150, task.id))
         task = task.as_json()
         task['result'] = 'success'
-        log.info( "task send to client : {}".format(task) )
+        dblog.debug( "task send to client : {}".format(task) )
 
         return json.dumps( task )
     else:
@@ -42,7 +62,7 @@ def addTaskWithTwoDirection( task ):
 
     addTask( task )
     task['direction'] = -task['direction']
-    task['date_guess'] = -task['date_guess']
+    task['receipt']= task['receipt'][:2]+str(int(task['receipt'][2:])+task['direction']*task['distance'])
     addTask( task )
 
     return
@@ -59,41 +79,39 @@ def addTaskMultiTasks( task , turn=1 ):
 
 def addTask( task ):
 
-    date = datetime.date( 1911+int(task['date'][:3]), int(task['date'][4:6]), int(task['date'][7:9]) )
+    tskDate = datetime.strptime(task['date'],"%Y/%m/%d")
+    if tskDate.date() > date.today():
+        dblog.warn("Cannot add task, dateOverToday:{}".format(tskDate.date()))
+        return
+    if task['fail_cnt'] >= 5:
+        dblog.warn("Cannot add task, fail count limit")
+        return
 
-    if date > datetime.date.today():
-        raise DateOverFlowError(date)
-
-    hash = hashlib.sha1()
-    hash.update( str(int(task['receipt'][3:])/100) + task['date'] + str(task['direction']) )
-    hashString = hash.hexdigest()
-
-    if len( Task.objects.filter (
-                               hash = hashString
-                           ) ) == 0 :
+    #if len( Task.objects.filter(receipt = task['receipt']) ) == 0 :
+    try:
         Task.objects.create(
             receipt = task['receipt'],
             date = task['date'],
-            date_guess = task['date_guess'],
             direction = task['direction'],
             distance = task['distance'],
-            hash = hashString
+            fail_cnt = task['fail_cnt'],
         )
-    else:
-        raise TaskAlreadyExistsError(task)
+    except Exception, e:
+        dblog.error( str(e) )
+        #traceback.print_exc(file=sys.stdout)
+        dblog.warn("Cannot add Task, already exists")
 
     return
 
 def reportTask( taskReport ):
     task = taskReport['task']
+
     statistics = taskReport['result']
-    task = Task.objects.filter( id=task['id'] )
-    if task:
-        task = task[0]
-        task.solved = True
-        task.save()
+    t = Task.objects.filter( id=task['id'] )
+    if t:
+        t=t[0]
         TaskStatistics.objects.create(
-            task = task,
+            task = t,
             time = statistics['time'],
             success = statistics['success'],
             error = statistics['error'],
@@ -104,19 +122,16 @@ def reportTask( taskReport ):
     return
 
 def storeData( receipts ):
-
+    dblog.debug("store data: {}".format(receipts))
     for receipt, vals in receipts.iteritems():
         try:
-            Receipt.objects.create(
+            Receipt.objects.get_or_create(
                 receipt = receipt,
                 date =  vals[0],
                 money = vals[1],
                 taxid = vals[2]
             )
-        except:
-            traceback.print_exc()
-
+        except ValueError:
+            dblog.error("cannot save {} {}".format(receipt,vals))
     return
-
-log.basicConfig(level=log.DEBUG)
 

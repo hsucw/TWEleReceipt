@@ -1,3 +1,24 @@
+#TWEleReceipt
+
+This is a NCTU project for inspecting the Taiwan's Eletronic Receipt system.
+
+#Installation
+
+Python 2.7, Virtualenv, Tesseract:
+`sudo apt-get install python tesseract, 
+`brew install python tesseract`
+
+Python Virtual Env:
+`pip install virtualenv`
+
+#Component
+- Connector.py: to connect, get, post data
+- HTMLDataResolver.py: for get the result from a .html
+- ImageResolver.py: for captach resolver
+
+#Usage
+python Connector.py \[Receipt ID\] \[DATE\]
+=======
 
 TWEleReceipt
 ===================================
@@ -46,6 +67,8 @@ Add Task  URL
 
 Author
 -----------------------------------
+
 [Chia-Wei Hsu](https://github.com/hsucw)<br />
 [Daniel](https://github.com/daniel0076)<br />
 [Stanley](https://github.com/stanley17112000)<br />
+[TungJerry](https://github.com/TungJerry)<br />

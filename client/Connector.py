@@ -5,6 +5,7 @@ import logging as log
 import sys
 import time
 import os
+import sys, traceback
 
 from ImgResolver import ImgResolver
 from HTMLDataResolver import HTMLDataResolver
@@ -20,13 +21,13 @@ class Connector(object):
         self.errorCnt = 0
 
         self.imgCode = ""
-        self.imgSHA = ""
         self.tmp_file = ""
 
         self.imgRslr = ImgResolver()
         self.imgRslr.loadPics()
         self.htmlRslr = HTMLDataResolver()
         self.cookie_str = ""
+        self.conn = None
 
         self.publicAudit = '/APMEMBERVAN/PublicAudit/PublicAudit'
         self.postPath = '/APMEMBERVAN/PublicAudit/PublicAudit!queryInvoiceByCon'
@@ -39,42 +40,59 @@ class Connector(object):
         self.headers['Accept'] = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
         self.headers['Accept-Language'] = "zh-TW,zh;q=0.8,en-US;q=0.5,en;q=0.3"
         self.headers['Accept-Encoding'] = "gzip, deflate"
-        # self.headers['Referer']="https://www.einvoice.nat.gov.tw/APMEMBERVAN/PublicAudit/PublicAudit!queryInvoiceByCon"
-        self.headers['Referer'] = "https://www.einvoice.nat.gov.tw/APMEMBERVAN/PublicAudit/PublicAudit"
+        self.headers['Referer']="https://www.einvoice.nat.gov.tw/APMEMBERVAN/PublicAudit/PublicAudit!queryInvoiceByCon"
+        #self.headers['Referer'] = "https://www.einvoice.nat.gov.tw/APMEMBERVAN/PublicAudit/PublicAudit"
+        #self.headers['Referer'] = "https://www.einvoice.nat.gov.tw/APMEMBERVAN/PublicAudit/PublicAudit?linkisNew=Y"
         self.headers['Connection'] = "keep-alive"
         self.headers['Content-Type'] = "application/x-www-form-urlencoded"
         self.headers['Cookie'] = self.cookie_str
 
     def __initConnections__(self, path):
-        self.conn = httplib.HTTPSConnection(self.domain)
+        if self.conn is None:
+            log.debug("Initial connection")
+            self.conn = httplib.HTTPSConnection(self.domain)
+            self.setReqHeader()
         if self.conn is None:
             raise Exception
-        self.setReqHeader()
-        log.debug("GET:{} with {}".format(path, self.headers))
-        self.conn.request("GET", path, headers=self.headers)
 
     def getPath(self, path="/"):
-
+        self.body = None
         self.__initConnections__( path )
-    
+        self.conn.request("GET", path, headers=self.headers)
+        #log.debug("GET:{} with {}".format(path, self.headers))
+
         while True:
             try:
+                #time.sleep(1)
                 self.res = self.conn.getresponse()
             except httplib.ResponseNotReady:
-
-                log.debug ("retry after 3 seconds...")
-                time.sleep( 3 )
+                self.body = self.res.read()
+                if self.body is not None:
+                    break
+                else:
+                    log.error("retry")
+                    continue
+            except httplib.BadStatusLine:
+                log.error("error: BadStatusLine")
                 continue
-            else:
-                break
+            except Exception, e:
+                #if errorcode==errno.ECONNREFUSED:
+                #    log.error("Connection Refused")
+                #else:
+                #log.debug( e)
+                log.error( "Exception in user code:")
+                traceback.print_exc(file=sys.stdout)
+                self.__initConnections__( path )
+                continue
 
         for header in self.res.getheaders():
             if header[0] == 'set-cookie':
                 self.cookie_str = header[1]
-                log.debug("Set-cookie:{}".format(header[1]))
+                #log.debug("Set-cookie:{}".format(header[1]))
                 break
 
-        self.body = self.res.read()
+        if self.body is None:
+            self.body = self.res.read()
         return self.res.status
 
     def resolveImg(self):
@@ -82,9 +100,8 @@ class Connector(object):
 
         while self.imgCode is "":
             self.getPath(self.imgPath)
-
-            time.sleep( 3 )
-            self.imgCode, self.imgSHA = self.imgRslr.resolveImg(self.body)
+            #time.sleep( 3 )
+            self.imgCode = self.imgRslr.resolveImg(self.body)
         return self.imgCode
 
     def setPostData(self, num, date):
@@ -94,7 +111,7 @@ class Connector(object):
         self.postData['publicAuditVO.randomNumber'] = ""
         self.postData['txtQryImageCode'] = self.imgCode
         # self.postData['CSRT'] = "13264906813807202173"
-        self.postData['CSRT'] = "10413798442182405690"
+        self.postData['CSRT'] = "11764538770937556216"
 
 
     def postForm(self, path):
@@ -102,14 +119,13 @@ class Connector(object):
 
         self.setReqHeader()
         self.conn.request("POST", path, params, headers=self.headers)
-        log.debug("POST:{} {} with {}".format(path, params, self.headers))
+        #log.debug("POST:{} {} with {}".format(path, params, self.headers))
         while True:
             try:
                 self.res = self.conn.getresponse()
             except (httplib.ResponseNotReady ,httplib.BadStatusLine):
-
-                log.info("retry")
-                time.sleep( 3 ) 
+                log.warn("retry")
+                time.sleep( 1 )
                 self.conn = httplib.HTTPSConnection(self.domain)
                 self.setReqHeader()
                 self.conn.request("POST", path, params, headers=self.headers)
@@ -142,7 +158,6 @@ class Connector(object):
         while randNo is None:
 
             if not self.session_valid:
-                self.imgRslr.reportFail(self.imgCode, self.imgSHA)
                 self.resolveImg()
 
             self.postData['publicAuditVO.randomNumber'] = guess_list[guess_index]
@@ -178,12 +193,15 @@ if __name__ == '__main__':
     c = Connector()
     # log.info('Connect to {}'.format(c.domain))
 
+    #print c.getPath(c.imgPath)
+
+
     res = None
     while res is None:
 
-        c.imgRslr.reportFail(c.imgCode, c.imgSHA)
+        log.info('Get Image ')
         c.resolveImg()
-        log.info('[{}]Get Image {}:{}'.format(c.res.reason, c.tmp_file, c.imgCode))
+        log.info('[{}]Resolve Image {}:{}'.format(c.res.reason, c.tmp_file, c.imgCode))
         c.setPostData(rec_id, rec_date)
         c.postForm(c.postPath)
         log.info('[{} {}]Post data'.format(c.res.status, c.res.reason))

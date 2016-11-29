@@ -8,19 +8,9 @@ import re
 import thread
 import time
 import requests
+import random
 
 DEBUG_LEVEL = log.DEBUG
-
-def progress(count, total, suffix=''):
-    bar_len = 60
-    filled_len = int(round(bar_len * count / float(total)))
-
-    percents = round(100.0 * count / float(total), 1)
-    bar = '=' * filled_len + '-' * (bar_len - filled_len)
-
-    sys.stdout.write('[%s] %s%s ...%s (%s/%s)\r' % (bar, percents, '%', suffix, count, total))
-    sys.stdout.flush()  # As suggested by Rom Ruben
-
 
 class TaskSolver(object):
     def __init__(self):
@@ -29,6 +19,7 @@ class TaskSolver(object):
         self.getTaskUrl = "/api/getTask/"
         self.c = Connector()
         self.data = ""
+        self.testsim = []
         self.receipt_done = dict()
     def getTasks(self, task):
         """ getTasks """
@@ -39,24 +30,26 @@ class TaskSolver(object):
         res = None
         while res is None:
             if not self.c.session_valid:
-                #del self.c
-                #self.c = Connector()
+                del self.c
+                self.c = Connector()
+                self.c.imgRslr.reportFail(self.c.imgCode, self.c.imgSHA)
                 self.c.resolveImg()
+            #log.info('[{}]Get Image {}:{}'.format(self.c.res.reason, self.c.tmp_file, self.c.imgCode))
+            #log.info('{} and {}'.format(receipt , receipt_date))
             self.c.setPostData(receipt, receipt_date )
             self.c.postForm( self.c.postPath )
+            #log.info('[{} {}]Post data'.format(self.c.res.status,self.c.res.reason))
             res = self.c.getInfo()
-            noneCnt+=1
-            with open("out.html" , "w") as outFd:
-                outFd.write(self.c.body)
+
 
         if not self.c.info:
             return False
         else:
-            #log.info("===[Query Result]===")
+            log.info("===[Query Result]===")
             receipt = self.c.info
             receipt['money'] = receipt['money'].replace(',','')
-            #for k,r in receipt.iteritems():
-            #    print k+":\t\t"+r
+            for k,r in receipt.iteritems():
+                print k+":\t\t"+r
 
             self.receipt_done[self.c.info['id']] = (receipt['date'],receipt['money'],receipt['taxid'])
             return True
@@ -85,6 +78,18 @@ class TaskSolver(object):
         return (p*cov/total)**2
 
 
+    def genSimData(self,length):
+        allpass = [1]*length
+        allfail = [0]*length
+        halftailfail = [1]*(length/2)+[0]*(length-(length/2))
+        halfheadfail = [0]*(length/2)+[1]*(length-(length/2))
+
+        listall = [allpass, allfail, halftailfail, halfheadfail]
+        i = random.randint(0,3)
+
+        return listall[i]
+
+
     def solve_task(self, task_dict):
 
         self.receipt_done = {}
@@ -94,8 +99,6 @@ class TaskSolver(object):
         date = task_dict['date']
         direction = task_dict['direction']
         receipt = task_dict['receipt']
-
-        log.debug(task_dict)
 
         if task_dict['todo'] == None:
             log.info("resolve new task")
@@ -110,18 +113,28 @@ class TaskSolver(object):
                 log.error("Unknown distance")
                 exit(1)
 
-            receipt_queue = [init_alpha+"{:08d}".format(x) for x in num_list]
+            receipt_queue = [init_alpha+str(x) for x in num_list]
         else: # do todo_list
             log.info("redo todo list")
             receipt_queue = task_dict['todo'].split(",")
 
-        lastSuccessReciept = ""
         total = len(receipt_queue)
         cnt = 0
+
+        self.testsim=self.genSimData(total)
+
+        print receipt_queue
+
         for query_rcpt in receipt_queue:
-            #log.debug("{}".format(query_rcpt))
-            progress(cnt, total, query_rcpt)
-            res = self.Query(query_rcpt, date)
+            #log.info("task solving...{}/{}".format(cnt+1, total))
+
+            # simulate
+            if self.testsim[cnt] == 1:
+                res = True
+                self.receipt_done[query_rcpt] = (date,10,2)
+            else:
+                res = False
+
             if res is True:
                 if len(density) != 0 and density[-1] > 0:
                     density.append(density[-1]+1)
@@ -151,19 +164,15 @@ class TaskSolver(object):
         receipt = self.receipt_done
         task_dict['succ']+=result['success']
         return_data = {'result':result,'receipt':self.receipt_done,'task':task_dict}
-
+        #time.sleep(3)
         return return_data
 
 
     def start_solver(self):
 
         while True:
-            try:
-                task = requests.get(self.server+self.getTaskUrl)
-            except :
-                log.error( "connection to server failed... retry after 10 secs" )
-                continue
 
+            task = requests.get(self.server+self.getTaskUrl)
             log.debug( "Recieve task : {}".format ( task.text ) )
             time_start = time.time()
             task_dict = json.loads( task.text )
@@ -179,15 +188,15 @@ class TaskSolver(object):
             time_delta = time.time() - time_start
             result['result']['time'] = time_delta
 
-            #log.info( "\n=====================statistics===================\n" )
+            log.info( "\n=====================statistics===================\n" )
             receiptHasdata = result['result']['success']
             receiptFailed = result['result']['error']
-            #log.info( "receipt / s : {}\n".format( task_dict['distance']/time_delta ) )
-            #log.info( "average time consume for each receipt : {}s\n".format( time_delta/task_dict['distance'] ) )
-            #log.info( "hit rate ( receipt has data / total receipt ) : {}%\n".format( receiptHasdata / task_dict['distance']  * 100) )
-            #log.info( "correct receipt / sec : {}\n".format( receiptHasdata/time_delta ) )
-            #log.info( "missing rate : {}%\n".format( receiptFailed/task_dict['distance'] ) )
-            #log.info( "\n==================================================\n" )
+            log.info( "receipt / s : {}\n".format( task_dict['distance']/time_delta ) )
+            log.info( "average time consume for each receipt : {}s\n".format( time_delta/task_dict['distance'] ) )
+            log.info( "hit rate ( receipt has data / total receipt ) : {}%\n".format( receiptHasdata / task_dict['distance']  * 100) )
+            log.info( "correct receipt / sec : {}\n".format( receiptHasdata/time_delta ) )
+            log.info( "missing rate : {}%\n".format( receiptFailed/task_dict['distance'] ) )
+            log.info( "\n==================================================\n" )
 
             log.info( "send : \n{}".format(result) )
             requests.post(self.server+'/api/reportTask/', data=json.dumps( result ))
