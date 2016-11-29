@@ -2,6 +2,7 @@ from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from utils.Exceptions import TaskAlreadyExistsError, DateOverFlowError
 from django.conf import settings
+from django.db import IntegrityError
 
 import logging
 import DB
@@ -52,7 +53,7 @@ def __repackTask__( task ):
 
 
 
-#@csrf_exempt
+@csrf_exempt
 # add task by client submitted qr code
 def addTask( request ):
 
@@ -118,7 +119,6 @@ def reportTask( request ):
         lastReceipt = Helper.modifyReceiptNum(task['receipt'], -1*direction*distance)
         lastTask = DB.getTaskObject(lastReceipt,lastDate)
 
-
         DB.reportTask( taskReport )
         genNew = False
         if queryResult['success'] > 0:
@@ -149,7 +149,10 @@ def reportTask( request ):
                 curTask.date = nextDate
                 curTask.todo = ','.join(fails)
                 curTask.succ = distance - len(fails)
-                curTask.save()
+                try:
+                    curTask.save()
+                except IntegrityError:
+                    srvlog.warn("Task already exists")
 
             if lastTask:
                 lastTask.date = nextDate

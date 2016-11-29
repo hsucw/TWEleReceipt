@@ -112,11 +112,14 @@ def reportTask( taskReport ):
 def storeData( receipts ):
     dblog.debug("store data: {}".format(receipts))
     for receipt, vals in receipts.iteritems():
-        Receipt.objects.get_or_create(
-            receipt = receipt,
-            date =  vals[0],
-            money = vals[1],
-            taxid = vals[2]
-        )
+        try:
+            Receipt.objects.get_or_create(
+                receipt = receipt,
+                date =  vals[0],
+                money = vals[1],
+                taxid = vals[2]
+            )
+        except ValueError:
+            dblog.error("cannot save {} {}".format(receipt,vals))
     return
 
