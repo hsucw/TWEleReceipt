@@ -71,7 +71,9 @@ class Connector(object):
                     log.error("retry")
                     continue
             except httplib.BadStatusLine:
-                log.error("error: BadStatusLine")
+                log.error("error: BadStatusLine {}")
+                self.__initConnections__( path )
+                self.conn.request("GET", path, headers=self.headers)
                 continue
             except Exception, e:
                 #if errorcode==errno.ECONNREFUSED:
