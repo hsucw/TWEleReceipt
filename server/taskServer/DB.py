@@ -40,7 +40,7 @@ def createTaskObject(rcpt, dt, dirtn):
 
 def getTask():
 
-    tasks = Task.objects.filter( queued=False, solved = False ).order_by('-fail_cnt')
+    tasks = Task.objects.filter( queued=False, solved = False ).order_by('fail_cnt')
     dblog.info( "Tasks remain : {}" .format( len( tasks ) ))
 
     if tasks:

@@ -67,23 +67,6 @@ class TaskSolver(object):
         receipt_num += delta
         return receipt_eng+str(receipt_num)
 
-    # Using success density
-    def resultAnalysis(self, suc_density):
-        # |max|>|min|: mostly success, otherwise, fail
-        # 0 ~ 1: confidence
-
-        min_den = min(suc_density)
-        max_den = max(suc_density)
-        total = len(suc_density)
-        cov = max_den - min_den
-
-        if suc_density[-1] > 0:
-            p = 0.0
-        else:
-            p = 1.0
-
-        return (p*cov/total)**2
-
 
     def solve_task(self, task_dict):
 
@@ -122,34 +105,17 @@ class TaskSolver(object):
             #log.debug("{}".format(query_rcpt))
             progress(cnt, total, query_rcpt)
             res = self.Query(query_rcpt, date)
-            if res is True:
-                if len(density) != 0 and density[-1] > 0:
-                    density.append(density[-1]+1)
-                else:
-                    density.append(1)
-                lastSuccessReciept = query_rcpt
-            else: # False Query
+            if res is not True:
                 fails.append(query_rcpt)
-                if len(density) != 0 and density[-1] < 0:
-                    density.append(density[-1]-1)
-                else:
-                    density.append(-1)
             cnt+=1
 
-        if task_dict['todo'] == None:
-            trend = self.resultAnalysis(density)
-        else:
-            trend = 0
 
         result = {
-                'success':len(filter(lambda i:i > 0, density)),
-                'error':len(filter(lambda i:i < 0, density)),
+                'success': len(receipt_queue) - len(fails),
+                'error':len(fails),
                 'fail':fails,
-                'guess':trend
                 }
-        task_dict['todo'] = None
         receipt = self.receipt_done
-        task_dict['succ']+=result['success']
         return_data = {'result':result,'receipt':self.receipt_done,'task':task_dict}
 
         return return_data
