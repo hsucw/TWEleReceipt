@@ -1,7 +1,7 @@
-#!env python2
+#!/usr/bin/env python
 import httplib
 import urllib
-import logging as log
+import logging
 import sys
 import time
 import os
@@ -10,6 +10,18 @@ import socket
 
 from ImgResolver import ImgResolver
 from HTMLDataResolver import HTMLDataResolver
+
+logging.basicConfig(level=logging.INFO)
+
+def progress(count, total, suffix=''):
+    bar_len = 60
+    filled_len = int(round(bar_len * count / float(total)))
+
+    percents = round(100.0 * count / float(total), 1)
+    bar = '=' * filled_len + '-' * (bar_len - filled_len)
+
+    sys.stdout.write('[%s] %s%s ...%s (%s/%s)\r' % (bar, percents, '%', suffix, count, total))
+    sys.stdout.flush()  # As suggested by Rom Ruben
 
 class Connector(object):
     def __init__(self, domain="www.einvoice.nat.gov.tw"):
@@ -60,6 +72,7 @@ class Connector(object):
         try:
             self.conn.request("GET", path, headers=self.headers)
         except httplib.CannotSendRequest as e:
+            log.error("CannotSendRequest")
             pass
         except Exception as e:
             log.error("{}".format(type(e).__name__))
@@ -70,14 +83,14 @@ class Connector(object):
         self.res = None
         while True:
             try:
-                time.sleep(cnt)
+                time.sleep(1)
                 self.res = self.conn.getresponse()
             except Exception, e:
                 if self.res is not None:
                     self.body = self.res.read()
                     break
                 cnt+=1
-                sys.stdout.write("retry {}\r".format(cnt))
+                sys.stdout.write("\tretry {}\r".format(cnt))
                 sys.stdout.flush()
                 self.conn = None
                 self.__initConnections__( path )
@@ -130,7 +143,7 @@ class Connector(object):
             #    log.error("Max Redo Post")
             #    exit(1)
             try:
-                time.sleep(cnt)
+                time.sleep(1)
                 self.res = self.conn.getresponse()
                 if  self.res :
                     break
@@ -145,7 +158,7 @@ class Connector(object):
                 continue
             except Exception as e:
                 cnt+=1
-                log.error("Redo All {} {}".format(cnt, type(e).__name__))
+                log.error("\tRedo All {} {}\r".format(cnt, type(e).__name__))
                 self.resolveImg()
                 self.setPostData(\
                         self.postData['publicAuditVO.invoiceNumber'],
@@ -175,6 +188,7 @@ class Connector(object):
         list_len = len(guess_list)
         guess_index = 0
         randNo = None
+        total = 9999
         while randNo is None:
 
             if not self.session_valid:
@@ -189,7 +203,8 @@ class Connector(object):
                 break
 
             if guess_index < list_len:
-                log.info( "\rtrying rand no {}, total {}/{}".format(guess_list[guess_index],guess_index+1,list_len) )
+                #log.info( "\rtrying rand no {}, total {}/{}".format(guess_list[guess_index],guess_index+1,list_len) )
+                progress(guess_index, total, guess_list[guess_index])
 
                 guess_index += 1
             else:
@@ -200,11 +215,14 @@ class Connector(object):
 
 if __name__ == '__main__':
     """ give a guess for id & date"""
-    log.basicConfig(level=log.DEBUG)
+    logging.basicConfig(level=logging.DEBUG)
+    log = logging.getLogger(" ")
+    log.setLevel(20)
+    #log.basicConfig(level=log.INFO)
 
     if len(sys.argv) != 3:
         log.info("Usage: python Connector.py [RECEIPT_ID] [DATE(YYYY/MM/DD)]")
-        log.error("Unknown input")
+        log.error("\tUnknown input\r")
         sys.exit(1)
 
     rec_id = sys.argv[1]
@@ -230,7 +248,7 @@ if __name__ == '__main__':
         log.debug( "No Record" )
     log.info("===[Query Result]===")
     for k, r in c.info.iteritems():
-        log.info( k+":\t\t"+r )
+        log.info( "\t{:>20s}:{:<20s}".format(k,r))
 
     guessRandNo = raw_input("Info found, will you like to guess the random number? [Y/N]:")
     if guessRandNo.lower() == 'y':
