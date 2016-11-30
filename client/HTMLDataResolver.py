@@ -90,7 +90,12 @@ class HTMLDataResolver(object):
         elif no_data_rec_str in content:
             return {}
 
-        dom = htmldom.HtmlDom().createDom(content)
+        try:
+            dom = htmldom.HtmlDom().createDom(content)
+        except Exception, e:
+            log.error(e)
+            log.error("error content:{}".format(content))
+            exit(1)
 
         items = dom.find("table[class=lpTb] tr td")
 

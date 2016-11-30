@@ -1,14 +1,27 @@
-#!env python2
+#!/usr/bin/env python
 import httplib
 import urllib
-import logging as log
+import logging
 import sys
 import time
 import os
 import sys, traceback
+import socket
 
 from ImgResolver import ImgResolver
 from HTMLDataResolver import HTMLDataResolver
+
+logging.basicConfig(level=logging.INFO)
+
+def progress(count, total, suffix=''):
+    bar_len = 60
+    filled_len = int(round(bar_len * count / float(total)))
+
+    percents = round(100.0 * count / float(total), 1)
+    bar = '=' * filled_len + '-' * (bar_len - filled_len)
+
+    sys.stdout.write('[%s] %s%s ...%s (%s/%s)\r' % (bar, percents, '%', suffix, count, total))
+    sys.stdout.flush()  # As suggested by Rom Ruben
 
 class Connector(object):
     def __init__(self, domain="www.einvoice.nat.gov.tw"):
@@ -50,7 +63,7 @@ class Connector(object):
     def __initConnections__(self, path):
         if self.conn is None:
             log.debug("Initial connection")
-            self.conn = httplib.HTTPSConnection(self.domain)
+            self.conn = httplib.HTTPSConnection(self.domain, strict=False)
             self.setReqHeader()
         if self.conn is None:
             raise Exception
@@ -58,32 +71,38 @@ class Connector(object):
     def getPath(self, path="/"):
         self.body = None
         self.__initConnections__( path )
-        self.conn.request("GET", path, headers=self.headers)
+        try:
+            self.conn.request("GET", path, headers=self.headers)
+        except httplib.CannotSendRequest as e:
+            log.error("CannotSendRequest")
+            pass
+        except Exception as e:
+            log.error("{}".format(type(e).__name__))
+            exit(1)
         #log.debug("GET:{} with {}".format(path, self.headers))
 
+        cnt = 0
+        self.res = None
         while True:
             try:
-                #time.sleep(1)
+                time.sleep(1)
                 self.res = self.conn.getresponse()
-            except httplib.ResponseNotReady:
-                self.body = self.res.read()
-                if self.body is not None:
-                    break
-                else:
-                    log.error("retry")
-                    continue
-            except httplib.BadStatusLine:
-                log.error("error: BadStatusLine")
-                continue
             except Exception, e:
-                #if errorcode==errno.ECONNREFUSED:
-                #    log.error("Connection Refused")
-                #else:
-                #log.debug( e)
-                log.error( "Exception in user code:")
-                traceback.print_exc(file=sys.stdout)
+                if self.res is not None:
+                    self.body = self.res.read()
+                    break
+                cnt+=1
+                sys.stdout.write("\tretry {}\r".format(cnt))
+                sys.stdout.flush()
+                self.conn = None
                 self.__initConnections__( path )
+                self.conn.request("GET", path, headers=self.headers)
+                #if cnt > 10:
+                #    log.error("Reaching Max Fail")
+                #    exit(1)
                 continue
+
+
 
         for header in self.res.getheaders():
             if header[0] == 'set-cookie':
@@ -100,7 +119,6 @@ class Connector(object):
 
         while self.imgCode is "":
             self.getPath(self.imgPath)
-            #time.sleep( 3 )
             self.imgCode = self.imgRslr.resolveImg(self.body)
         return self.imgCode
 
@@ -120,20 +138,39 @@ class Connector(object):
         self.setReqHeader()
         self.conn.request("POST", path, params, headers=self.headers)
         #log.debug("POST:{} {} with {}".format(path, params, self.headers))
+        self.res = None
+        cnt = 0
         while True:
+            #if cnt > 10:
+            #    log.error("Max Redo Post")
+            #    exit(1)
             try:
+                time.sleep(1)
                 self.res = self.conn.getresponse()
-            except (httplib.ResponseNotReady ,httplib.BadStatusLine):
-                log.warn("retry")
-                time.sleep( 1 )
-                self.conn = httplib.HTTPSConnection(self.domain)
+                if  self.res :
+                    break
+            except httplib.ResponseNotReady:
+                if self.res is not None:
+                    break
+                cnt+=1
+                sys.stdout.write("retry {}\r".format(cnt))
+                sys.stdout.flush()
+                #self.conn = httplib.HTTPSConnection(self.domain)
+                self.conn.request("POST", path, params, headers=self.headers)
+                continue
+            except Exception as e:
+                cnt+=1
+                log.error("\tRedo All {} {}\r".format(cnt, type(e).__name__))
+                self.resolveImg()
+                self.setPostData(\
+                        self.postData['publicAuditVO.invoiceNumber'],
+                        self.postData['publicAuditVO.invoiceDate'])
+                params = urllib.urlencode(self.postData)
                 self.setReqHeader()
                 self.conn.request("POST", path, params, headers=self.headers)
                 continue
-            else:
-                break
-        if  self.res :
-            self.body = self.res.read()
+
+        self.body = self.res.read()
         return self.res.status
 
     def getInfo(self):
@@ -155,6 +192,7 @@ class Connector(object):
         list_len = len(guess_list)
         guess_index = 0
         randNo = None
+        total = 9999
         while randNo is None:
 
             if not self.session_valid:
@@ -169,7 +207,8 @@ class Connector(object):
                 break
 
             if guess_index < list_len:
-                log.info( "\rtrying rand no {}, total {}/{}".format(guess_list[guess_index],guess_index+1,list_len) )
+                #log.info( "\rtrying rand no {}, total {}/{}".format(guess_list[guess_index],guess_index+1,list_len) )
+                progress(guess_index, total, guess_list[guess_index])
 
                 guess_index += 1
             else:
@@ -180,21 +219,20 @@ class Connector(object):
 
 if __name__ == '__main__':
     """ give a guess for id & date"""
-    log.basicConfig(level=log.DEBUG)
+    logging.basicConfig(level=logging.DEBUG)
+    log = logging.getLogger(" ")
+    log.setLevel(20)
+    #log.basicConfig(level=log.INFO)
 
     if len(sys.argv) != 3:
         log.info("Usage: python Connector.py [RECEIPT_ID] [DATE(YYYY/MM/DD)]")
-        log.error("Unknown input")
+        log.error("\tUnknown input\r")
         sys.exit(1)
 
     rec_id = sys.argv[1]
     rec_date = sys.argv[2]
 
     c = Connector()
-    # log.info('Connect to {}'.format(c.domain))
-
-    #print c.getPath(c.imgPath)
-
 
     res = None
     while res is None:
@@ -207,18 +245,14 @@ if __name__ == '__main__':
         log.info('[{} {}]Post data'.format(c.res.status, c.res.reason))
         res = c.getInfo()
 
-        with open("out.html", "w") as outFd:
-            outFd.write(c.body)
-
-
-
-
+        #with open("out.html", "w") as outFd:
+        #    outFd.write(c.body)
 
     if not bool(c.info):
         log.debug( "No Record" )
     log.info("===[Query Result]===")
     for k, r in c.info.iteritems():
-        log.info( k+":\t\t"+r )
+        log.info( "\t{:>20s}:{:<20s}".format(k,r))
 
     guessRandNo = raw_input("Info found, will you like to guess the random number? [Y/N]:")
     if guessRandNo.lower() == 'y':

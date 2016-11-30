@@ -35,21 +35,24 @@ class ImgResolver(object):
         self.tmp_file = fileName
         with open(self.tmp_file, "w") as oFd:
             oFd.write(img)
-
         # resolve noise
-        im = Image.open(self.tmp_file)
-        enhancer = ImageEnhance.Color(im)
-        im = enhancer.enhance(0.0)
-        enhancer = ImageEnhance.Contrast(im)
-        im = enhancer.enhance(3.0)
-        enhancer = ImageEnhance.Brightness(im)
-        im = enhancer.enhance(10.0)
-        enhancer = ImageEnhance.Contrast(im)
-        im = enhancer.enhance(20.0)
-        enhancer = ImageEnhance.Sharpness(im)
-        im = enhancer.enhance(0.0)
-        im.save(self.tmp_file)
-
+        try:
+            im = Image.open(self.tmp_file)
+            enhancer = ImageEnhance.Color(im)
+            im = enhancer.enhance(0.0)
+            enhancer = ImageEnhance.Contrast(im)
+            im = enhancer.enhance(3.0)
+            enhancer = ImageEnhance.Brightness(im)
+            im = enhancer.enhance(10.0)
+            enhancer = ImageEnhance.Contrast(im)
+            im = enhancer.enhance(20.0)
+            enhancer = ImageEnhance.Sharpness(im)
+            im = enhancer.enhance(0.0)
+            im.save(self.tmp_file)
+        except Exception as e:
+            pass
+        else:
+            pass
         # use tesseract
 
         imgCode = os.popen("tesseract -l eng -psm 8 {} stdout 2>/dev/null"\

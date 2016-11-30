@@ -98,7 +98,6 @@ def reportTask( request ):
         direction = task['direction']
         distance = task['distance']
         todo = task['todo']
-        guess = queryResult['guess']
         fails = queryResult['fail']
 
         curDate =  task['date']
@@ -127,7 +126,7 @@ def reportTask( request ):
 
         if genNew:
             nextTask = DB.createTaskObject(nextReceipt,curDate, direction)
-            if nextTask:
+            if nextTask:#fail_cnt = 0
                 nextTask.save()
 
             if lastTask:
@@ -136,17 +135,22 @@ def reportTask( request ):
                 lastTask.save()
 
             if curTask:
-                curTask.fail_cnt+=1
+                if curTask.fail_cnt == 0:
+                    curTask.fail_cnt=4
+                else:
+                    curTask.fail_cnt =5
+                    curTask.solved = True
                 curTask.succ = distance - len(fails)
                 curTask.todo = ','.join(fails)
                 curTask.save()
 
         else:
-            if curTask:
-                curTask.fail_cnt+=4
-                if curTask.fail_cnt >= 5:
+            if curTask: #First fail
+                if curTask.fail_cnt == 0:
+                    curTask.fail_cnt = 4
+                    curTask.date = nextDate
+                else:
                     curTask.solved = True
-                curTask.date = nextDate
                 curTask.todo = ','.join(fails)
                 curTask.succ = distance - len(fails)
                 try:
@@ -156,7 +160,7 @@ def reportTask( request ):
 
             if lastTask:
                 lastTask.date = nextDate
-                lastTask.fail_cnt+=3
+                lastTask.fail_cnt=3
                 lastTask.save()
 
         return HttpResponse('report recorded')
