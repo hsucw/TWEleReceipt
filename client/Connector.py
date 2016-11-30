@@ -57,24 +57,36 @@ class Connector(object):
     def getPath(self, path="/"):
         self.body = None
         self.__initConnections__( path )
-        self.conn.request("GET", path, headers=self.headers)
+        try:
+            self.conn.request("GET", path, headers=self.headers)
+        except httplib.CannotSendRequest as e:
+            pass
+        except Exception as e:
+            log.error("{}".format(type(e).__name__))
+            exit(1)
         #log.debug("GET:{} with {}".format(path, self.headers))
 
         cnt = 0
+        self.res = None
         while True:
             try:
+                time.sleep(cnt)
                 self.res = self.conn.getresponse()
 
             except Exception, e:
-                if self.res:
+                if self.res is not None:
                     self.body = self.res.read()
                     break
                 cnt+=1
                 sys.stdout.write("retry {}\r".format(cnt))
                 sys.stdout.flush()
-                time.sleep(3)
                 self.conn = None
                 self.__initConnections__( path )
+                self.conn.request("GET", path, headers=self.headers)
+                #if cnt > 10:
+                #    log.error("Reaching Max Fail")
+                #    exit(1)
+                continue
 
 
 
@@ -112,22 +124,39 @@ class Connector(object):
         self.setReqHeader()
         self.conn.request("POST", path, params, headers=self.headers)
         #log.debug("POST:{} {} with {}".format(path, params, self.headers))
+        self.res = None
         cnt = 0
         while True:
+            #if cnt > 10:
+            #    log.error("Max Redo Post")
+            #    exit(1)
             try:
+                time.sleep(cnt)
                 self.res = self.conn.getresponse()
-            except (httplib.ResponseNotReady ,httplib.BadStatusLine):
+                if  self.res :
+                    break
+            except httplib.ResponseNotReady:
+                if self.res is not None:
+                    break
                 cnt+=1
                 sys.stdout.write("retry {}\r".format(cnt))
                 sys.stdout.flush()
-                time.sleep( 1 )
                 #self.conn = httplib.HTTPSConnection(self.domain)
                 self.conn.request("POST", path, params, headers=self.headers)
                 continue
-            else:
-                break
-        if  self.res :
-            self.body = self.res.read()
+            except Exception as e:
+                cnt+=1
+                log.error("Redo All {} {}".format(cnt, type(e).__name__))
+                self.resolveImg()
+                self.setPostData(\
+                        self.postData['publicAuditVO.invoiceNumber'],
+                        self.postData['publicAuditVO.invoiceDate'])
+                params = urllib.urlencode(self.postData)
+                self.setReqHeader()
+                self.conn.request("POST", path, params, headers=self.headers)
+                continue
+
+        self.body = self.res.read()
         return self.res.status
 
     def getInfo(self):
@@ -195,12 +224,8 @@ if __name__ == '__main__':
         log.info('[{} {}]Post data'.format(c.res.status, c.res.reason))
         res = c.getInfo()
 
-        with open("out.html", "w") as outFd:
-            outFd.write(c.body)
-
-
-
-
+        #with open("out.html", "w") as outFd:
+        #    outFd.write(c.body)
 
     if not bool(c.info):
         log.debug( "No Record" )
