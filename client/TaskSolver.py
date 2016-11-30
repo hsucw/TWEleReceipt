@@ -22,7 +22,7 @@ def progress(count, total, suffix=''):
     sys.stdout.flush()  # As suggested by Rom Ruben
 
 
-class TaskSolver(object):
+class TaskSolver(objMect):
     def __init__(self):
         self.tasks = []
         self.server = "http://127.0.0.1:8000"
@@ -45,7 +45,6 @@ class TaskSolver(object):
             self.c.setPostData(receipt, receipt_date )
             self.c.postForm( self.c.postPath )
             res = self.c.getInfo()
-            noneCnt+=1
             with open("out.html" , "w") as outFd:
                 outFd.write(self.c.body)
 
