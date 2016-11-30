@@ -84,7 +84,6 @@ class Connector(object):
         self.res = None
         while True:
             try:
-                time.sleep(1)
                 self.res = self.conn.getresponse()
             except Exception, e:
                 if self.res is not None:
@@ -96,6 +95,7 @@ class Connector(object):
                 self.conn = None
                 self.__initConnections__( path )
                 self.conn.request("GET", path, headers=self.headers)
+                time.sleep(cnt*0.5)
                 #if cnt > 10:
                 #    log.error("Reaching Max Fail")
                 #    exit(1)
@@ -144,7 +144,6 @@ class Connector(object):
             #    log.error("Max Redo Post")
             #    exit(1)
             try:
-                time.sleep(1)
                 self.res = self.conn.getresponse()
                 if  self.res :
                     break
@@ -167,6 +166,7 @@ class Connector(object):
                 params = urllib.urlencode(self.postData)
                 self.setReqHeader()
                 self.conn.request("POST", path, params, headers=self.headers)
+                time.sleep(cnt*0.5)
                 continue
 
         self.body = self.res.read()
