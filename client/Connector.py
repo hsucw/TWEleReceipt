@@ -72,7 +72,6 @@ class Connector(object):
             try:
                 time.sleep(cnt)
                 self.res = self.conn.getresponse()
-
             except Exception, e:
                 if self.res is not None:
                     self.body = self.res.read()
