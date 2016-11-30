@@ -12,6 +12,7 @@ from ImgResolver import ImgResolver
 from HTMLDataResolver import HTMLDataResolver
 
 logging.basicConfig(level=logging.INFO)
+log = logging.getLogger(" ")
 
 def progress(count, total, suffix=''):
     bar_len = 60
@@ -216,7 +217,6 @@ class Connector(object):
 if __name__ == '__main__':
     """ give a guess for id & date"""
     logging.basicConfig(level=logging.DEBUG)
-    log = logging.getLogger(" ")
     log.setLevel(20)
     #log.basicConfig(level=log.INFO)
 
