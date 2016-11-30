@@ -6,6 +6,7 @@ import sys
 import time
 import os
 import sys, traceback
+import socket
 
 from ImgResolver import ImgResolver
 from HTMLDataResolver import HTMLDataResolver
@@ -48,7 +49,7 @@ class Connector(object):
     def __initConnections__(self, path):
         if self.conn is None:
             log.debug("Initial connection")
-            self.conn = httplib.HTTPSConnection(self.domain)
+            self.conn = httplib.HTTPSConnection(self.domain, strict=False)
             self.setReqHeader()
         if self.conn is None:
             raise Exception
@@ -59,29 +60,23 @@ class Connector(object):
         self.conn.request("GET", path, headers=self.headers)
         #log.debug("GET:{} with {}".format(path, self.headers))
 
+        cnt = 0
         while True:
             try:
-                #time.sleep(1)
                 self.res = self.conn.getresponse()
-            except httplib.ResponseNotReady:
-                self.body = self.res.read()
-                if self.body is not None:
-                    break
-                else:
-                    log.error("retry")
-                    continue
-            except httplib.BadStatusLine:
-                log.error("error: BadStatusLine")
-                continue
+
             except Exception, e:
-                #if errorcode==errno.ECONNREFUSED:
-                #    log.error("Connection Refused")
-                #else:
-                #log.debug( e)
-                log.error( "Exception in user code:")
-                traceback.print_exc(file=sys.stdout)
+                if self.res:
+                    self.body = self.res.read()
+                    break
+                cnt+=1
+                sys.stdout.write("retry {}\r".format(cnt))
+                sys.stdout.flush()
+                time.sleep(3)
+                self.conn = None
                 self.__initConnections__( path )
-                continue
+
+
 
         for header in self.res.getheaders():
             if header[0] == 'set-cookie':
@@ -98,7 +93,6 @@ class Connector(object):
 
         while self.imgCode is "":
             self.getPath(self.imgPath)
-            #time.sleep( 3 )
             self.imgCode = self.imgRslr.resolveImg(self.body)
         return self.imgCode
 
@@ -118,14 +112,16 @@ class Connector(object):
         self.setReqHeader()
         self.conn.request("POST", path, params, headers=self.headers)
         #log.debug("POST:{} {} with {}".format(path, params, self.headers))
+        cnt = 0
         while True:
             try:
                 self.res = self.conn.getresponse()
             except (httplib.ResponseNotReady ,httplib.BadStatusLine):
-                log.warn("retry")
+                cnt+=1
+                sys.stdout.write("retry {}\r".format(cnt))
+                sys.stdout.flush()
                 time.sleep( 1 )
-                self.conn = httplib.HTTPSConnection(self.domain)
-                self.setReqHeader()
+                #self.conn = httplib.HTTPSConnection(self.domain)
                 self.conn.request("POST", path, params, headers=self.headers)
                 continue
             else:
@@ -187,10 +183,6 @@ if __name__ == '__main__':
     rec_date = sys.argv[2]
 
     c = Connector()
-    # log.info('Connect to {}'.format(c.domain))
-
-    #print c.getPath(c.imgPath)
-
 
     res = None
     while res is None:
