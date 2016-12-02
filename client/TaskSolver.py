@@ -22,10 +22,10 @@ def progress(count, total, suffix=''):
     sys.stdout.flush()  # As suggested by Rom Ruben
 
 
-class TaskSolver(objMect):
+class TaskSolver(object):
     def __init__(self):
         self.tasks = []
-        self.server = "http://127.0.0.1:8000"
+        self.server = "http://192.168.0.234:8000"
         self.getTaskUrl = "/api/getTask/"
         self.c = Connector()
         self.data = ""
@@ -99,14 +99,14 @@ class TaskSolver(objMect):
 
         lastSuccessReciept = ""
         total = len(receipt_queue)
-        cnt = 0
+
         for query_rcpt in receipt_queue:
             #log.debug("{}".format(query_rcpt))
             progress(cnt, total, query_rcpt)
             res = self.Query(query_rcpt, date)
             if res is not True:
                 fails.append(query_rcpt)
-            cnt+=1
+
 
 
         result = {

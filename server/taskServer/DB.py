@@ -3,13 +3,8 @@ import logging
 import json
 import thread
 import time
-from datetime import datetime, timedelta, date
-import hashlib
+from datetime import datetime, date
 import Helper
-import traceback
-from utils.Exceptions import DateOverFlowError, TaskAlreadyExistsError, DateOutOfRangeError
-from django.db import IntegrityError
-import random
 
 logging.basicConfig(level=logging.INFO)
 dblog = logging.getLogger("DB")

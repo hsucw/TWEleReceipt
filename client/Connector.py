@@ -1,17 +1,14 @@
 #!/usr/bin/env python
 import httplib
 import urllib
-import logging
-import sys
+import logging as log
 import time
-import os
 import sys, traceback
-import socket
 
 from ImgResolver import ImgResolver
 from HTMLDataResolver import HTMLDataResolver
 
-logging.basicConfig(level=logging.INFO)
+log.basicConfig(level=log.INFO)
 
 def progress(count, total, suffix=''):
     bar_len = 60
@@ -81,25 +78,30 @@ class Connector(object):
             exit(1)
         #log.debug("GET:{} with {}".format(path, self.headers))
 
-        cnt = 0
         self.res = None
+        cnt = 0
+
         while True:
             try:
                 time.sleep(1)
                 self.res = self.conn.getresponse()
-            except Exception, e:
+
                 if self.res is not None:
                     self.body = self.res.read()
                     break
-                cnt+=1
+
+            except Exception, e:
+
+                if self.res is not None:
+                    self.body = self.res.read()
+                    break
+
                 sys.stdout.write("\tretry {}\r".format(cnt))
                 sys.stdout.flush()
                 self.conn = None
                 self.__initConnections__( path )
                 self.conn.request("GET", path, headers=self.headers)
-                #if cnt > 10:
-                #    log.error("Reaching Max Fail")
-                #    exit(1)
+
                 continue
 
 
@@ -107,11 +109,9 @@ class Connector(object):
         for header in self.res.getheaders():
             if header[0] == 'set-cookie':
                 self.cookie_str = header[1]
-                #log.debug("Set-cookie:{}".format(header[1]))
                 break
 
-        if self.body is None:
-            self.body = self.res.read()
+
         return self.res.status
 
     def resolveImg(self):
@@ -128,7 +128,6 @@ class Connector(object):
         self.postData['publicAuditVO.customerIdentifier'] = ""
         self.postData['publicAuditVO.randomNumber'] = ""
         self.postData['txtQryImageCode'] = self.imgCode
-        # self.postData['CSRT'] = "13264906813807202173"
         self.postData['CSRT'] = "11764538770937556216"
 
 
@@ -155,7 +154,7 @@ class Connector(object):
                 cnt+=1
                 sys.stdout.write("retry {}\r".format(cnt))
                 sys.stdout.flush()
-                #self.conn = httplib.HTTPSConnection(self.domain)
+
                 self.conn.request("POST", path, params, headers=self.headers)
                 continue
             except Exception as e:
