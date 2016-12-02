@@ -2,6 +2,7 @@
 import httplib
 import urllib
 import logging as log
+import sys 
 import time
 import sys, traceback
 
@@ -85,7 +86,10 @@ class Connector(object):
             try:
                 time.sleep(1)
                 self.res = self.conn.getresponse()
+<<<<<<< HEAD
 
+=======
+>>>>>>> 6c0002020c50aa7f38fa6756162e5c88ca25e377
                 if self.res is not None:
                     self.body = self.res.read()
                     break
@@ -218,8 +222,7 @@ class Connector(object):
 
 if __name__ == '__main__':
     """ give a guess for id & date"""
-    logging.basicConfig(level=logging.DEBUG)
-    log = logging.getLogger(" ")
+    
     log.setLevel(20)
     #log.basicConfig(level=log.INFO)
 

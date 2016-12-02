@@ -1,7 +1,7 @@
+import numpy as np
 from oct2py import octave
 import csv
 import sys
-import numpy as np
 import os
 
 

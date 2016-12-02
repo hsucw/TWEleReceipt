@@ -1,9 +1,9 @@
-from models import Task, Receipt, TaskStatistics
+from models import Task, Receipt, TaskStatistics, ClientRequests
 import logging
 import json
 import thread
 import time
-from datetime import datetime, date
+from datetime import datetime, timedelta, date
 import Helper
 
 logging.basicConfig(level=logging.INFO)
@@ -55,10 +55,29 @@ def getTask():
 
 def addTaskWithTwoDirection( task ):
 
+    token = Helper.idGenerator(10)
+
+    addClientToken(token, task)
+
     addTask( task )
     task['direction'] = -task['direction']
     task['receipt']= task['receipt'][:2]+str(int(task['receipt'][2:])+task['direction']*task['distance'])
     addTask( task )
+
+
+
+    return token
+
+def addClientToken( token , task ):
+    try:
+        ClientRequests.objects.create(
+            receipt = task['receipt'],
+            date = task['date'],
+            token = token
+        )
+    except Exception, e:
+        dblog.error( str(e) )
+        dblog.warn( 'A client token repeated' )
 
     return
 
@@ -98,10 +117,16 @@ def addTask( task ):
 
     return
 
-def reportTask( taskReport ):
-    task = taskReport['task']
+def reportTask( taskReport , taxId = 0):
 
+    task = taskReport['task']
     statistics = taskReport['result']
+
+    if len ( taskReport['receipt'] ) > 0:
+        for receipt, vals in taskReport['receipt'].iteritems():
+            taxId = vals[2]
+            break
+
     t = Task.objects.filter( id=task['id'] )
     if t:
         t=t[0]
@@ -111,7 +136,8 @@ def reportTask( taskReport ):
             success = statistics['success'],
             error = statistics['error'],
             distance = taskReport['task']['distance'],
-            rps = taskReport['task']['distance']/statistics['time']
+            rps = taskReport['task']['distance']/statistics['time'],
+            taxId = taxId
         )
 
     return

@@ -5,17 +5,20 @@
 
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <link rel="stylesheet" type="text/css" href="{% static 'taskServer/css/bootstrap.min.css' %}">
-        <link rel="stylesheet" type="text/css" href="{% static 'taskServer/css/main.css' %}">
-        <script src="{% static 'taskServer/js/jquery-3.1.1.min.js' %}"></script>
-        <script src="{% static 'taskServer/js/main.js' %}"></script>
-        <script src="{% static 'taskServer/js/bootstrap.min.js' %}"></script>
-        <script src="{% static 'taskServer/js/Chart.min.js' %}"></script>
+        <link rel="stylesheet" type="text/css" href="{% static '/taskServer/css/bootstrap.min.css' %}">
+        <link rel="stylesheet" type="text/css" href="{% static '/taskServer/css/main.css' %}">
+        <script src="{% static '/taskServer/js/jquery-3.1.1.min.js' %}"></script>
+        <script src="{% static '/taskServer/js/main.js' %}"></script>
+        <script src="{% static '/taskServer/js/bootstrap.min.js' %}"></script>
+        <script src="{% static '/taskServer/js/Chart.min.js' %}"></script>
+
 
     </head>
     <body>
         <canvas id="canvas1" width="200" height="200"></canvas>
         <canvas id="canvas2" width="200" height="200"></canvas>
+
+
 <script>
     var ctx = $('#canvas1')
     var data = {

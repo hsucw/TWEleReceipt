@@ -23,7 +23,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'f($nm#d(v*zmbxw_rhyhmt%*$)_p1l(&seal5gsml$ok2500^r'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 ALLOWED_HOSTS = ['*']
 
 
@@ -120,10 +120,13 @@ STATIC_ROOT = ''
 
 STATIC_URL = '/static/'
 
-STATICFILES_DIRS = (os.path.join('static'),)
+STATICFILES_DIRS =  os.path.join('static'),
+
 
 # self defined parameters
 
+#
+SERVER_URL = 'http://192.168.0.234:8000/'
 
 # guess distance per task
 RECEIPT_DISTANCE = 100
