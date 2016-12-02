@@ -2,8 +2,7 @@ from datetime import datetime
 from django.shortcuts import render
 import os
 import fnmatch
-import handler
-from os import walk
+import DB
 import csv
 from django.http import HttpResponse
 
@@ -16,7 +15,18 @@ def addTask( request ):
     })
 
 
-def showStatistics(request):
+def showStatistics(request, token = None):
+
+
+    if token is None:
+        return HttpResponse( "Invalid Token" )
+
+    taxId = DB.getTaxIdByToken( token )
+
+    if taxId is None:
+        return HttpResponse( "Invalid Token" )
+
+
 
     #
     #token = request.GET.get( 'token' )

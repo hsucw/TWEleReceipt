@@ -5,6 +5,7 @@ import thread
 import time
 from datetime import datetime, timedelta, date
 import Helper
+from django.forms import model_to_dict
 
 logging.basicConfig(level=logging.INFO)
 dblog = logging.getLogger("DB")
@@ -90,6 +91,51 @@ def addTaskMultiTasks( task , turn=1 ):
 
     return
 
+def background_process():
+
+
+def getStatisticDataByToken( token ):
+
+    taxId = getAndUpdateTaxIdByToken( token )
+    if taxId is 0:
+        return None
+
+
+
+
+    return
+
+
+def getAndUpdateTaxIdByToken( token ):
+
+    try:
+        clientRequests = ClientRequests.objects.filter( token=token )
+
+        if clientRequests:
+            clientRequest = clientRequests.values()[0]
+
+            if clientRequest['taxId'] is not 0:
+                return clientRequest['taxId']
+
+            receipt = clientRequest['receipt']
+            date = clientRequest['date']
+
+            if receipt and date:
+                task = getTaskObject( receipt , date )
+                task = model_to_dict( task )
+                taskId = task['id']
+                statistics = TaskStatistics.objects.filter( task=taskId )
+
+                if statistics:
+                    taxId = statistics.values()[0]['taxId']
+                    clientRequest.update( taxId=taxId )
+                    return taxId
+
+
+    except Exception, e:
+        dblog.error( str(e) )
+
+    return 0
 
 def addTask( task ):
 

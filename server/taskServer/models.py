@@ -48,12 +48,14 @@ class TaskStatistics( models.Model ):
     success = models.IntegerField()
     error = models.IntegerField()
     distance = models.IntegerField()
-    taxId = models.IntegerField()
+    taxId = models.IntegerField(default=0)
 
 class ClientRequests( models.Model ):
     token = models.TextField()
     receipt = models.TextField()
     date = models.TextField()
+    taxId = models.IntegerField(default = 0)
+    previousRequestTime = models.IntegerField( default=0 )
 
 
 
