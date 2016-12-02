@@ -7,12 +7,12 @@ from os import walk
 import csv
 from django.http import HttpResponse
 
-DATABASE_DIRECTORY = 'static/taskServer/receipts/'
+DATABASE_DIRECTORY = '../analysis/data/'
 
 def addTask( request ):
 
     return render( request, "index.html", {
-        'current_time' : str( datetime.now() )
+
     })
 
 

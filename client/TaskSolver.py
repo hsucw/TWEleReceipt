@@ -22,10 +22,10 @@ def progress(count, total, suffix=''):
     sys.stdout.flush()  # As suggested by Rom Ruben
 
 
-class TaskSolver(objMect):
+class TaskSolver(object):
     def __init__(self):
         self.tasks = []
-        self.server = "http://127.0.0.1:8000"
+        self.server = "http://192.168.0.234:8000"
         self.getTaskUrl = "/api/getTask/"
         self.c = Connector()
         self.data = ""

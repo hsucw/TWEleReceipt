@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 import httplib
 import urllib
-import logging
-import sys
+import logging as log
+import sys 
 import time
 import os
 import sys, traceback
@@ -11,7 +11,7 @@ import socket
 from ImgResolver import ImgResolver
 from HTMLDataResolver import HTMLDataResolver
 
-logging.basicConfig(level=logging.INFO)
+log.basicConfig(level=log.INFO)
 
 def progress(count, total, suffix=''):
     bar_len = 60
@@ -87,6 +87,10 @@ class Connector(object):
             try:
                 time.sleep(1)
                 self.res = self.conn.getresponse()
+                if self.res is not None:
+                    self.body = self.res.read()
+                    break
+
             except Exception, e:
                 if self.res is not None:
                     self.body = self.res.read()
@@ -219,8 +223,7 @@ class Connector(object):
 
 if __name__ == '__main__':
     """ give a guess for id & date"""
-    logging.basicConfig(level=logging.DEBUG)
-    log = logging.getLogger(" ")
+    
     log.setLevel(20)
     #log.basicConfig(level=log.INFO)
 
