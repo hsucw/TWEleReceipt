@@ -3,6 +3,7 @@ import logging
 import json
 import thread
 import time
+import threading
 from datetime import datetime, timedelta, date
 import Helper
 from django.forms import model_to_dict
@@ -91,22 +92,24 @@ def addTaskMultiTasks( task , turn=1 ):
 
     return
 
-def background_process():
-
-
-def getStatisticDataByToken( token ):
-
-    taxId = getAndUpdateTaxIdByToken( token )
-    if taxId is 0:
-        return None
-
-
-
+def genCSVFiles( tadId, date ):
 
     return
 
+def getStatisticDataByToken( token ):
 
-def getAndUpdateTaxIdByToken( token ):
+    taxId, date = getTaxIdAndDateByToken( token )
+    if taxId is 0 or date is None:
+        return None
+
+    t = threading.Thread( target=genCSVFiles(taxId, date), args=(), kwargs={} )
+    t.setDaemon( True )
+    t.start()
+
+    return None
+
+
+def getTaxIdAndDateByToken( token ):
 
     try:
         clientRequests = ClientRequests.objects.filter( token=token )
@@ -115,7 +118,7 @@ def getAndUpdateTaxIdByToken( token ):
             clientRequest = clientRequests.values()[0]
 
             if clientRequest['taxId'] is not 0:
-                return clientRequest['taxId']
+                return clientRequest['taxId'], clientRequest['date']
 
             receipt = clientRequest['receipt']
             date = clientRequest['date']
@@ -129,13 +132,13 @@ def getAndUpdateTaxIdByToken( token ):
                 if statistics:
                     taxId = statistics.values()[0]['taxId']
                     clientRequest.update( taxId=taxId )
-                    return taxId
+                    return taxId, date
 
 
     except Exception, e:
         dblog.error( str(e) )
 
-    return 0
+    return 0, None
 
 def addTask( task ):
 
