@@ -217,7 +217,7 @@ class Connector(object):
 if __name__ == '__main__':
     """ give a guess for id & date"""
     logging.basicConfig(level=logging.DEBUG)
-    log.setLevel(20)
+    log.setLevel(logging.DEBUG)
     #log.basicConfig(level=log.INFO)
 
     if len(sys.argv) != 3:
@@ -240,7 +240,7 @@ if __name__ == '__main__':
         c.postForm(c.postPath)
         log.info('[{} {}]Post data'.format(c.res.status, c.res.reason))
         res = c.getInfo()
-
+        log.info('res: {}'.format(res))
         #with open("out.html", "w") as outFd:
         #    outFd.write(c.body)
 
