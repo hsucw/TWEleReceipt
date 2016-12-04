@@ -4,6 +4,7 @@ import json
 import thread
 import time
 import threading
+from subprocess import call
 from datetime import datetime, timedelta, date
 import Helper
 from django.forms import model_to_dict
@@ -92,7 +93,24 @@ def addTaskMultiTasks( task , turn=1 ):
 
     return
 
-def genCSVFiles( tadId, date ):
+def genCSVFiles( taxId, dateString ):
+
+    dblog.info( 'generating csv file ' + taxId )
+
+    call( '../../analysis/gen_csv.py '+taxId )
+    dateNums = dateString.split( '/' )
+    if len( dateNums[0] ) <= 3:
+        dateNums[0] = str(int(dateNums[0]) + 1911)
+    dateString = '/'.join( dateNums )
+
+    date = datetime.strptime( dateString , "%Y/%m/%d" )
+
+    for deltaDay in range( -3, 4 , 1 ):
+        targetDate = date + timedelta( days = deltaDay )
+        targetDateString = '-'.join( (str(targetDate.year-1911),str(targetDate.month),str(targetDate.day)) )
+        docPath = '../../analysis/data/' + taxId + '/' + targetDateString + '.csv'
+        call( '../../analysis/gen_data.py norm '+ docPath + ' 24' )
+        call('../../analysis/gen_data.py norm ' + docPath + ' 1 1')
 
     return
 
@@ -116,6 +134,11 @@ def getTaxIdAndDateByToken( token ):
 
         if clientRequests:
             clientRequest = clientRequests.values()[0]
+
+            if datetime.now().time() - clientRequest['previousRequestTime'] < 10000 :
+                return 0, None
+
+            clientRequest.update( previousRequestTime=datetime.now().time() )
 
             if clientRequest['taxId'] is not 0:
                 return clientRequest['taxId'], clientRequest['date']
