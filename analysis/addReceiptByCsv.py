@@ -9,7 +9,7 @@ if len(sys.argv) < 2:
     exit(1)
 
 
-conn = httplib.HTTPConnection("127.0.0.1:8000")
+conn = httplib.HTTPConnection("140.113.194.94:8000")
 header={}
 conn.request("GET", "/")
 r1 = conn.getresponse()
