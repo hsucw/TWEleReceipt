@@ -68,6 +68,15 @@ def extractSequence(receipts):
     squence.append((st,ed, fd, ld))
     return squence
 
+def plotSeq(data,sequ):
+    # Initial
+    fig, ax1 = plt.subplots(figsize=(9, 7))
+    fig.subplots_adjust(left=0.115, right=0.88)
+    fig.canvas.set_window_title('Receipt Sequence')
+
+    for taxid in data.keys():
+
+
 
 def readAllData(args):
 
