@@ -95,9 +95,9 @@ def addTaskMultiTasks( task , turn=1 ):
 
 def genCSVFiles( taxId, dateString ):
 
-    dblog.info( 'generating csv file ' + taxId )
-
-    call( '../../analysis/gen_csv.py '+taxId )
+    dblog.info( 'generating csv file ' + str(taxId) )
+    call( 'pwd' )
+    call( 'python ../analysis/gen_csv.py '+ str(taxId) , shell=True )
     dateNums = dateString.split( '/' )
     if len( dateNums[0] ) <= 3:
         dateNums[0] = str(int(dateNums[0]) + 1911)
@@ -107,10 +107,10 @@ def genCSVFiles( taxId, dateString ):
 
     for deltaDay in range( -3, 4 , 1 ):
         targetDate = date + timedelta( days = deltaDay )
-        targetDateString = '-'.join( (str(targetDate.year-1911),str(targetDate.month),str(targetDate.day)) )
-        docPath = '../../analysis/data/' + taxId + '/' + targetDateString + '.csv'
-        call( '../../analysis/gen_data.py norm '+ docPath + ' 24' )
-        call('../../analysis/gen_data.py norm ' + docPath + ' 1 1')
+        targetDateString = '-'.join( (str(int(targetDate.year)-1911),str(targetDate.month),str(targetDate.day)) )
+        docPath = './data/' + str(taxId) + '/' + targetDateString + '.csv'
+        call( '../analysis/gen_data.py norm '+ docPath + ' 24' , shell=True )
+        call('../analysis/gen_data.py norm ' + docPath + ' 1 1', shell=True     )
 
     return
 
@@ -135,7 +135,7 @@ def getTaxIdAndDateByToken( token ):
         if clientRequests:
             clientRequest = clientRequests.values()[0]
 
-            if datetime.now().time() - clientRequest['previousRequestTime'] < 10000 :
+            if int(time.time()) - clientRequest['previousRequestTime'] < 10000 :
                 return 0, None
 
             clientRequest.update( previousRequestTime=datetime.now().time() )

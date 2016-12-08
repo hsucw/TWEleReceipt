@@ -126,7 +126,7 @@ STATICFILES_DIRS =  os.path.join('static'),
 # self defined parameters
 
 #
-SERVER_URL = 'http://192.168.0.234:8000/'
+SERVER_URL = 'http://localhost:8000/'
 
 # guess distance per task
 RECEIPT_DISTANCE = 100

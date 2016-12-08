@@ -86,10 +86,7 @@ class Connector(object):
             try:
                 time.sleep(1)
                 self.res = self.conn.getresponse()
-<<<<<<< HEAD
 
-=======
->>>>>>> 6c0002020c50aa7f38fa6756162e5c88ca25e377
                 if self.res is not None:
                     self.body = self.res.read()
                     break

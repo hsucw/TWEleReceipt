@@ -21,7 +21,7 @@ def showStatistics(request, token = None):
     if token is None:
         return HttpResponse( "Invalid Token" )
 
-    taxId = DB.getTaxIdByToken( token )
+    taxId = DB.getStatisticDataByToken( token )
 
     if taxId is None:
         return HttpResponse( "Invalid Token" )
