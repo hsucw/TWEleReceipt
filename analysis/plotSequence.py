@@ -74,7 +74,7 @@ def plotSeq(data,sequ):
     fig.subplots_adjust(left=0.115, right=0.88)
     fig.canvas.set_window_title('Receipt Sequence')
 
-    for taxid in data.keys():
+    #for taxid in data.keys():
 
 
 
@@ -111,6 +111,7 @@ def readAllData(args):
                 data[taxid] += (readDataXYZ(sd,ed,target_fname))
             data[taxid] = [ x for x in data[taxid] if x != []]
             seqs[taxid] = extractSequence(data[taxid])
+        print seqs
 
     #print data[taxid]
     return data
