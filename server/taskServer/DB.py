@@ -93,7 +93,7 @@ def addTaskMultiTasks( task , turn=1 ):
 
     return
 
-def genCSVFiles( taxId, dateString ):
+def genCSVFiles( taxId, dateString, token ):
 
     dblog.info( 'generating csv file ' + str(taxId)  )
 
@@ -118,20 +118,102 @@ def genCSVFiles( taxId, dateString ):
         call( 'cd ../analysis && python gen_data.py norm '+ docPath + ' 24' , shell=True )
         call( 'cd ../analysis && python gen_data.py freq ' + docPath + ' 1 1', shell=True )
 
+    clientRequests = ClientRequests.objects.filter(token=token)
+
+    if clientRequests:
+        clientRequest = clientRequests.values()[0]
+        clientRequest.update(previousRequestTime= -datetime.now().time)
+
     return
 
 def getStatisticDataByToken( token ):
 
-    taxId, date = getTaxIdAndDateByToken( token )
-    if taxId is 0 or date is None:
-        return None
+    status = checkAndUpdateClientRequestStatusByToken( token )
 
-    t = threading.Thread( target=genCSVFiles(taxId, date), args=(), kwargs={} )
+    if status < 0:
+        if status == -1:
+            dblog.warn( 'process under process' )
+            return {
+                'status': 'pending',
+                'data': 'your request is under process'
+            }
+        elif status == -2:
+            dblog.warn('token invalid')
+            return {
+                'status':'error',
+                'data':'token invalid'
+            }
+        elif status == -3:
+            dblog.warn('token not found')
+            return {
+                'status':'error',
+                'data':'token not found'
+            }
+
+    taxId, date = getTaxIdAndDateByToken( token )
+
+    if status > 0:
+        return {
+            'status': 'success',
+            'data' : getCsvFileNamesByTokenAndDate( token , date ),
+            'taxId' : taxId
+        }
+
+
+    if taxId is 0 or date is None:
+        return {
+            'status':'error',
+            'data':'receipt provided invalid'
+        }
+
+    t = threading.Thread( target=genCSVFiles(taxId, date,token), args=(), kwargs={} )
     t.setDaemon( True )
     t.start()
 
-    return None
+    return {
+        'status':'pending',
+        'data':'your process is under process'
+    }
 
+def getCsvFileNamesByTokenAndDate( token , dateString ):
+    date = datetime.strptime(dateString, "%Y/%m/%d")
+
+    ret = []
+
+    for deltaDay in range(-3, 4, 1):
+        targetDate = date + timedelta(days=deltaDay)
+
+        targetDateString = '{:03d}-{:02d}-{:02d}'.format(int(targetDate.year) - 1911, int(targetDate.month),
+                                                         int(targetDate.day))
+        ret.append( targetDateString  )
+    return ret
+
+
+def checkAndUpdateClientRequestStatusByToken( token ):
+
+    try:
+        clientRequests = ClientRequests.objects.filter(token=token)
+
+        if clientRequests:
+            clientRequest = clientRequests.values()[0]
+
+            if clientRequest['previousRequestTime'] < 0:
+                return 1
+
+            elif clientRequest['previousRequestTime'] == 0:
+                clientRequest.update(previousRequestTime=datetime.now().time())
+                return 0
+
+            elif clientRequest['previousRequestTime'] > 0 :
+                clientRequest.update(previousRequestTime=datetime.now().time())
+                return -1
+        else:
+            return -2
+
+    except Exception, e:
+        dblog.error( str(e) )
+
+    return -3
 
 def getTaxIdAndDateByToken( token ):
 
@@ -140,11 +222,6 @@ def getTaxIdAndDateByToken( token ):
 
         if clientRequests:
             clientRequest = clientRequests.values()[0]
-
-            if int(time.time()) - clientRequest['previousRequestTime'] < 10000 :
-                return 0, None
-
-            clientRequest.update( previousRequestTime=datetime.now().time() )
 
             if clientRequest['taxId'] is not 0:
                 return clientRequest['taxId'], clientRequest['date']

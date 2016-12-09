@@ -21,11 +21,18 @@ def showStatistics(request, token = None):
     if token is None:
         return HttpResponse( "Invalid Token" )
 
-    taxId = DB.getStatisticDataByToken( token )
+    state = DB.getStatisticDataByToken( token )
 
-    if taxId is None:
-        return HttpResponse( "Invalid Token" )
+    status = state['status']
+    data = state['data']
 
+
+    if status == 'error':
+        return HttpResponse( data )
+    elif status == 'pending':
+        return HttpResponse( 'Your request is pending' )
+
+    taxId = state['taxId']
 
 
     #
@@ -41,49 +48,44 @@ def showStatistics(request, token = None):
     colorsAlpha = [ "rgba(25,59,48,1)", "rgba(255,149,0,1)", "rgba(76,217,100,1)", "rgba(0,122,255,1)", "rgba(88,86,214,1)" ];
 
     colorCnt = 0
-    for filename in os.listdir(DATABASE_DIRECTORY):
-        if fnmatch.fnmatch( filename, '*.csv' ) and len( filename[:-4] ) == 8:
-            data = []
-            csvfile = open( DATABASE_DIRECTORY+filename , 'rb')  # 1
-            for row in csv.reader(csvfile):  # 2
-                data.append( float(row[0]) )
 
-            labelDate = filename[:4] + '-' + filename[4:6] + "-" + filename[6:8]
+    targetPath = DATABASE_DIRECTORY + taxId + '/'
 
-            dataset['summed'].append({
-                'labels': labelDate,
-                'backgroundColor': colorsAlpha[colorCnt],
-                'borderColor': colors[colorCnt],
-                'pointBorderColor': colors[colorCnt],
-                'pointHoverBackgroundColor': colors[colorCnt],
-                'pointHoverBorderColor': colors[colorCnt],
-                'data': data
-            })
+    for filename in os.listdir(targetPath):
 
-            colorCnt+=1
+        for matchFileName in data:
 
 
+            if filename.__contains__( matchFileName ):
 
-    for filename in os.listdir(DATABASE_DIRECTORY):
-        if fnmatch.fnmatch(filename, 'money.csv'):
-            data = []
-            csvfile = open(DATABASE_DIRECTORY + filename, 'rb')  # 1
-            for row in csv.reader(csvfile):  # 2
-                data.append(float(row[0]))
+                type = None
 
-            labelDate = filename
+                if filename.__contains__( 'freq' ):
+                    type = 'freq'
+                elif filename.__contains__( 'norm' ):
+                    type = 'norm'
+                else :
+                    continue
 
-            dataset['freq'].append({
-                'labels': labelDate,
-                'backgroundColor': colorsAlpha[colorCnt],
-                'borderColor': colors[colorCnt],
-                'pointBorderColor': colors[colorCnt],
-                'pointHoverBackgroundColor': colors[colorCnt],
-                'pointHoverBorderColor': colors[colorCnt],
-                'data': data
-            })
-            colorCnt+=1
 
+                data = []
+                csvfile = open( targetPath+filename , 'rb')  # 1
+                for row in csv.reader(csvfile):  # 2
+                    data.append( float(row[0]) )
+
+                labelDate = filename[:4] + '-' + filename[4:6] + "-" + filename[6:8]
+
+                dataset[type].append({
+                    'labels': labelDate,
+                    'backgroundColor': colorsAlpha[colorCnt],
+                    'borderColor': colors[colorCnt],
+                    'pointBorderColor': colors[colorCnt],
+                    'pointHoverBackgroundColor': colors[colorCnt],
+                    'pointHoverBorderColor': colors[colorCnt],
+                    'data': data
+                })
+
+                colorCnt+=1
 
 
     return render( request, "displayStatistics.html", {
