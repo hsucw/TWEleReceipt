@@ -4,7 +4,7 @@ import json
 import thread
 import time
 import threading
-from subprocess import call
+from subprocess import call, check_call
 from datetime import datetime, timedelta, date
 import Helper
 from django.forms import model_to_dict
@@ -95,9 +95,12 @@ def addTaskMultiTasks( task , turn=1 ):
 
 def genCSVFiles( taxId, dateString ):
 
-    dblog.info( 'generating csv file ' + str(taxId) )
-    call( 'pwd' )
-    call( 'python ../analysis/gen_csv.py '+ str(taxId) , shell=True )
+    dblog.info( 'generating csv file ' + str(taxId)  )
+
+    call( 'cd ../analysis && python gen_csv.py '+ str(taxId) , shell=True )
+
+
+
     dateNums = dateString.split( '/' )
     if len( dateNums[0] ) <= 3:
         dateNums[0] = str(int(dateNums[0]) + 1911)
@@ -107,10 +110,13 @@ def genCSVFiles( taxId, dateString ):
 
     for deltaDay in range( -3, 4 , 1 ):
         targetDate = date + timedelta( days = deltaDay )
-        targetDateString = '-'.join( (str(int(targetDate.year)-1911),str(targetDate.month),str(targetDate.day)) )
+
+        targetDateString = '{:03d}-{:02d}-{:02d}'.format( int(targetDate.year)-1911 , int(targetDate.month), int(targetDate.day) )
+
+
         docPath = './data/' + str(taxId) + '/' + targetDateString + '.csv'
-        call( '../analysis/gen_data.py norm '+ docPath + ' 24' , shell=True )
-        call('../analysis/gen_data.py norm ' + docPath + ' 1 1', shell=True     )
+        call( 'cd ../analysis && python gen_data.py norm '+ docPath + ' 24' , shell=True )
+        call( 'cd ../analysis && python gen_data.py freq ' + docPath + ' 1 1', shell=True )
 
     return
 
