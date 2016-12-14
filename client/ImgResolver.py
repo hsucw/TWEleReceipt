@@ -20,7 +20,6 @@ class ImgResolver(object):
         self.check = None
         self.tmp_file = ""
 
-
     def loadPics(self):
         content = None
 

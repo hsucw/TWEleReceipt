@@ -32,6 +32,8 @@ class Connector(object):
         self.guess_total = 0
         self.guess_hit = 0
 
+        self.errorCnt = 0
+
         self.imgCode = ""
         self.tmp_file = ""
 
@@ -177,8 +179,10 @@ class Connector(object):
         self.info = self.htmlRslr.resolve(self.body)
         if (self.info is None):
             self.session_valid = False
+
         else:
             self.session_valid = True
+
         return self.info
 
     def guessRandNo(self):

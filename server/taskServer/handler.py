@@ -4,6 +4,7 @@ from utils.Exceptions import TaskAlreadyExistsError, DateOverFlowError
 from django.conf import settings
 from django.db import IntegrityError
 
+
 import logging
 import DB
 import json
@@ -16,7 +17,6 @@ import sys
 
 logging.basicConfig(level=logging.DEBUG)
 srvlog = logging.getLogger("SEVR")
-
 
 # send the task to client
 def getTask( request ):

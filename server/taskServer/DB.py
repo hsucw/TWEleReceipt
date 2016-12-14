@@ -5,6 +5,8 @@ import thread
 import time
 from datetime import datetime, timedelta, date
 import hashlib
+import Helper
+import traceback
 from utils.Exceptions import DateOverFlowError, TaskAlreadyExistsError, DateOutOfRangeError
 from django.db import IntegrityError
 import random
@@ -47,7 +49,7 @@ def getTask():
         task = tasks[0]
         task.queued = True
         task.save()
-        thread.start_new_thread( taskTimeOut, (30, task.id))
+        thread.start_new_thread( taskTimeOut, (150, task.id))
         task = task.as_json()
         task['result'] = 'success'
         dblog.debug( "task send to client : {}".format(task) )
@@ -64,6 +66,16 @@ def addTaskWithTwoDirection( task ):
     addTask( task )
 
     return
+
+def addTaskMultiTasks( task , turn=1 ):
+
+    for i in range( turn ):
+
+        task['receipt'] = Helper.modifyReceiptNum( task['receipt'] , task['direction']*task['distance'] )
+        addTask( task )
+
+    return
+
 
 def addTask( task ):
 
