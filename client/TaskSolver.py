@@ -25,6 +25,7 @@ def progress(count, total, suffix=''):
 class TaskSolver(object):
     def __init__(self):
         self.tasks = []
+        self.server = "http://localhost:8000"
         self.server = "http://140.113.194.94:8000"
         self.getTaskUrl = "/api/getTask/"
         self.c = Connector()
@@ -45,7 +46,6 @@ class TaskSolver(object):
             self.c.setPostData(receipt, receipt_date )
             self.c.postForm( self.c.postPath )
             res = self.c.getInfo()
-
             with open("out.html" , "w") as outFd:
                 outFd.write(self.c.body)
 
@@ -105,9 +105,10 @@ class TaskSolver(object):
             #log.debug("{}".format(query_rcpt))
             progress(cnt, total, query_rcpt)
             res = self.Query(query_rcpt, date)
+            cnt += 1
             if res is not True:
                 fails.append(query_rcpt)
-            cnt+=1
+
 
 
         result = {
@@ -124,8 +125,12 @@ class TaskSolver(object):
     def start_solver(self):
 
         while True:
+            try:
+                task = requests.get(self.server+self.getTaskUrl)
+            except :
+                log.error( "connection to server failed... retry after 10 secs" )
+                continue
 
-            task = requests.get(self.server+self.getTaskUrl)
             log.debug( "Recieve task : {}".format ( task.text ) )
             time_start = time.time()
             task_dict = json.loads( task.text )

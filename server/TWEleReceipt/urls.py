@@ -24,6 +24,6 @@ urlpatterns = [
     url(r'^api/reportTask/$', handler.reportTask),
     url(r'^api/addTask/$', handler.addTask),
     url(r'^addTask/$', handler.addTask),
-    url(r'^showStatistics/$', views.showStatistics),
+    url(r'^showStatistics/(?P<token>[0-9A-Za-z]{10})/$', views.showStatistics),
 	url(r'^$', views.addTask),
 ]

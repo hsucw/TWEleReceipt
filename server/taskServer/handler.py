@@ -4,6 +4,7 @@ from utils.Exceptions import TaskAlreadyExistsError, DateOverFlowError
 from django.conf import settings
 from django.db import IntegrityError
 
+
 import logging
 import DB
 import json
@@ -16,7 +17,6 @@ import sys
 
 logging.basicConfig(level=logging.DEBUG)
 srvlog = logging.getLogger("SEVR")
-
 
 # send the task to client
 def getTask( request ):
@@ -56,7 +56,7 @@ def __repackTask__( task ):
 @csrf_exempt
 # add task by client submitted qr code
 def addTask( request ):
-
+    token = ''
     try:
         if request.method == 'POST':
 
@@ -65,7 +65,7 @@ def addTask( request ):
             task = __repackTask__( task )
 
             srvlog.debug(task)
-            DB.addTaskWithTwoDirection( task )
+            token = DB.addTaskWithTwoDirection( task )
 
     except DateOverFlowError:
         srvlog.error( 'date out of range' )
@@ -79,7 +79,9 @@ def addTask( request ):
         return HttpResponse( 'add Task Failed' )
 
 
-    return HttpResponse( 'add Task Success' )
+    url = settings.SERVER_URL + 'showStatistics/' + token
+
+    return HttpResponse( 'add Task Success<br>' + '<a href="{}">{} </a>'.format( url, url ))
 
 
 

@@ -1,0 +1,4 @@
+pillow
+image
+htmldom
+requests

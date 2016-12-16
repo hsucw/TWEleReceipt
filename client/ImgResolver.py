@@ -20,7 +20,6 @@ class ImgResolver(object):
         self.check = None
         self.tmp_file = ""
 
-
     def loadPics(self):
         content = None
 
@@ -28,7 +27,6 @@ class ImgResolver(object):
             self.check = self.basicCheck
 
     def tesseract(self, img):
-
         # keep the data
         fileName = "tmp_"+int(time.time()+random.randint(1,99999)).__str__()+".jpeg"
         while os.path.exists( fileName ):
@@ -36,6 +34,7 @@ class ImgResolver(object):
         self.tmp_file = fileName
         with open(self.tmp_file, "w") as oFd:
             oFd.write(img)
+
         # resolve noise
         try:
             im = Image.open(self.tmp_file)
@@ -84,6 +83,7 @@ class ImgResolver(object):
                 break
             self.guess_total +=1
             imgCode= getattr(self,alg)(img)
+
             log.debug("Use '{}' solver: {}".format(alg, imgCode))
 
         # check

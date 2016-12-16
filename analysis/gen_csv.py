@@ -8,6 +8,7 @@ from datetime import datetime
 
 DATA_DIR="./data"
 tbl_name = "taskServer_receipt"
+sqlite3_url  = '../server/db_receipts.sqlite3'
 
 def genCsvFiles(db_name, taxid_list):
 

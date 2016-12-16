@@ -2,21 +2,38 @@ from datetime import datetime
 from django.shortcuts import render
 import os
 import fnmatch
-import handler
-from os import walk
+import DB
 import csv
 from django.http import HttpResponse
 
-DATABASE_DIRECTORY = 'static/taskServer/receipts/'
+DATABASE_DIRECTORY = '../analysis/data/'
 
 def addTask( request ):
 
     return render( request, "index.html", {
-        'current_time' : str( datetime.now() )
+
     })
 
 
-def showStatistics(request):
+def showStatistics(request, token = None):
+
+
+    if token is None:
+        return HttpResponse( "Invalid Token" )
+
+    state = DB.getStatisticDataByToken( token )
+
+    status = state['status']
+    msg = state['data']
+
+
+    if status == 'error':
+        return HttpResponse( msg )
+    elif status == 'pending':
+        return HttpResponse( 'Your request is pending' )
+
+    taxId = state['taxId']
+
 
     #
     #token = request.GET.get( 'token' )
@@ -26,54 +43,54 @@ def showStatistics(request):
     #queryDates = handler.getDateRangeFromToken( token )
 
 
-    dataset = { 'freq':[], 'summed':[] }
+    dataset = { 'freq':[], 'norm':[] }
     colors = [ "rgba(25,59,48,1)", "rgba(255,149,0,1)", "rgba(76,217,100,1)", "rgba(0,122,255,1)", "rgba(88,86,214,1)" ];
     colorsAlpha = [ "rgba(25,59,48,1)", "rgba(255,149,0,1)", "rgba(76,217,100,1)", "rgba(0,122,255,1)", "rgba(88,86,214,1)" ];
 
     colorCnt = 0
-    for filename in os.listdir(DATABASE_DIRECTORY):
-        if fnmatch.fnmatch( filename, '*.csv' ) and len( filename[:-4] ) == 8:
-            data = []
-            csvfile = open( DATABASE_DIRECTORY+filename , 'rb')  # 1
-            for row in csv.reader(csvfile):  # 2
-                data.append( float(row[0]) )
 
-            labelDate = filename[:4] + '-' + filename[4:6] + "-" + filename[6:8]
+    targetPath = DATABASE_DIRECTORY + str(taxId)  + '/'
 
-            dataset['summed'].append({
-                'labels': labelDate,
-                'backgroundColor': colorsAlpha[colorCnt],
-                'borderColor': colors[colorCnt],
-                'pointBorderColor': colors[colorCnt],
-                'pointHoverBackgroundColor': colors[colorCnt],
-                'pointHoverBorderColor': colors[colorCnt],
-                'data': data
-            })
+    for filename in os.listdir(targetPath):
 
-            colorCnt+=1
+
+        for matchFileName in msg:
 
 
 
-    for filename in os.listdir(DATABASE_DIRECTORY):
-        if fnmatch.fnmatch(filename, 'money.csv'):
-            data = []
-            csvfile = open(DATABASE_DIRECTORY + filename, 'rb')  # 1
-            for row in csv.reader(csvfile):  # 2
-                data.append(float(row[0]))
+            if filename.__contains__( matchFileName ):
 
-            labelDate = filename
 
-            dataset['freq'].append({
-                'labels': labelDate,
-                'backgroundColor': colorsAlpha[colorCnt],
-                'borderColor': colors[colorCnt],
-                'pointBorderColor': colors[colorCnt],
-                'pointHoverBackgroundColor': colors[colorCnt],
-                'pointHoverBorderColor': colors[colorCnt],
-                'data': data
-            })
-            colorCnt+=1
 
+                type = None
+
+                if filename.__contains__( 'freq' ):
+                    type = 'freq'
+                elif filename.__contains__( 'norm' ):
+                    type = 'norm'
+                else :
+                    continue
+
+                print filename, type
+
+                data = []
+                csvfile = open( targetPath+filename , 'rb')  # 1
+                for row in csv.reader(csvfile):  # 2
+                    data.append( float(row[0]) )
+
+                labelDate = filename[:3] + '-' + filename[4:6] + "-" + filename[7:9]
+
+                dataset[type].append({
+                    'labels': labelDate,
+                    'backgroundColor': colorsAlpha[colorCnt],
+                    'borderColor': colors[colorCnt],
+                    'pointBorderColor': colors[colorCnt],
+                    'pointHoverBackgroundColor': colors[colorCnt],
+                    'pointHoverBorderColor': colors[colorCnt],
+                    'data': data
+                })
+
+                colorCnt+=1
 
 
     return render( request, "displayStatistics.html", {

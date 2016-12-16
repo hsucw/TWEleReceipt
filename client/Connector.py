@@ -1,12 +1,10 @@
 #!/usr/bin/env python
 import httplib
 import urllib
-import logging
-import sys
+import logging as log
+import sys 
 import time
-import os
 import sys, traceback
-import socket
 
 from ImgResolver import ImgResolver
 from HTMLDataResolver import HTMLDataResolver
@@ -31,6 +29,8 @@ class Connector(object):
         self.postData = {}
         self.guess_total = 0
         self.guess_hit = 0
+
+        self.errorCnt = 0
 
         self.imgCode = ""
         self.tmp_file = ""
@@ -80,25 +80,36 @@ class Connector(object):
             exit(1)
         #log.debug("GET:{} with {}".format(path, self.headers))
 
-        cnt = 0
         self.res = None
+        cnt = 0
+
         while True:
             try:
                 self.res = self.conn.getresponse()
-            except Exception, e:
+
                 if self.res is not None:
                     self.body = self.res.read()
                     break
-                cnt+=1
+
+            except Exception, e:
+
+                if self.res is not None:
+                    self.body = self.res.read()
+                    break
+
                 sys.stdout.write("\tretry {}\r".format(cnt))
                 sys.stdout.flush()
                 self.conn = None
                 self.__initConnections__( path )
                 self.conn.request("GET", path, headers=self.headers)
+<<<<<<< HEAD
+
+=======
                 time.sleep(cnt*0.5)
                 #if cnt > 10:
                 #    log.error("Reaching Max Fail")
                 #    exit(1)
+>>>>>>> 90bcf2aa0ff0e53f4f5e7c36b11d79f27232af01
                 continue
 
 
@@ -106,11 +117,9 @@ class Connector(object):
         for header in self.res.getheaders():
             if header[0] == 'set-cookie':
                 self.cookie_str = header[1]
-                #log.debug("Set-cookie:{}".format(header[1]))
                 break
 
-        if self.body is None:
-            self.body = self.res.read()
+
         return self.res.status
 
     def resolveImg(self):
@@ -127,7 +136,6 @@ class Connector(object):
         self.postData['publicAuditVO.customerIdentifier'] = ""
         self.postData['publicAuditVO.randomNumber'] = ""
         self.postData['txtQryImageCode'] = self.imgCode
-        # self.postData['CSRT'] = "13264906813807202173"
         self.postData['CSRT'] = "11764538770937556216"
 
 
@@ -153,7 +161,7 @@ class Connector(object):
                 cnt+=1
                 sys.stdout.write("retry {}\r".format(cnt))
                 sys.stdout.flush()
-                #self.conn = httplib.HTTPSConnection(self.domain)
+
                 self.conn.request("POST", path, params, headers=self.headers)
                 continue
             except Exception as e:
@@ -177,8 +185,10 @@ class Connector(object):
         self.info = self.htmlRslr.resolve(self.body)
         if (self.info is None):
             self.session_valid = False
+
         else:
             self.session_valid = True
+
         return self.info
 
     def guessRandNo(self):
