@@ -24,11 +24,11 @@ def showStatistics(request, token = None):
     state = DB.getStatisticDataByToken( token )
 
     status = state['status']
-    data = state['data']
+    msg = state['data']
 
 
     if status == 'error':
-        return HttpResponse( data )
+        return HttpResponse( msg )
     elif status == 'pending':
         return HttpResponse( 'Your request is pending' )
 
@@ -43,20 +43,24 @@ def showStatistics(request, token = None):
     #queryDates = handler.getDateRangeFromToken( token )
 
 
-    dataset = { 'freq':[], 'summed':[] }
+    dataset = { 'freq':[], 'norm':[] }
     colors = [ "rgba(25,59,48,1)", "rgba(255,149,0,1)", "rgba(76,217,100,1)", "rgba(0,122,255,1)", "rgba(88,86,214,1)" ];
     colorsAlpha = [ "rgba(25,59,48,1)", "rgba(255,149,0,1)", "rgba(76,217,100,1)", "rgba(0,122,255,1)", "rgba(88,86,214,1)" ];
 
     colorCnt = 0
 
-    targetPath = DATABASE_DIRECTORY + taxId + '/'
+    targetPath = DATABASE_DIRECTORY + str(taxId)  + '/'
 
     for filename in os.listdir(targetPath):
 
-        for matchFileName in data:
+
+        for matchFileName in msg:
+
 
 
             if filename.__contains__( matchFileName ):
+
+
 
                 type = None
 
@@ -67,13 +71,14 @@ def showStatistics(request, token = None):
                 else :
                     continue
 
+                print filename, type
 
                 data = []
                 csvfile = open( targetPath+filename , 'rb')  # 1
                 for row in csv.reader(csvfile):  # 2
                     data.append( float(row[0]) )
 
-                labelDate = filename[:4] + '-' + filename[4:6] + "-" + filename[6:8]
+                labelDate = filename[:3] + '-' + filename[4:6] + "-" + filename[7:9]
 
                 dataset[type].append({
                     'labels': labelDate,

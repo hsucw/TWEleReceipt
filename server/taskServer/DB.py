@@ -6,6 +6,7 @@ import time
 import threading
 from subprocess import call, check_call
 from datetime import datetime, timedelta, date
+import os
 import Helper
 from django.forms import model_to_dict
 
@@ -115,14 +116,10 @@ def genCSVFiles( taxId, dateString, token ):
 
 
         docPath = './data/' + str(taxId) + '/' + targetDateString + '.csv'
-        call( 'cd ../analysis && python gen_data.py norm '+ docPath + ' 24' , shell=True )
-        call( 'cd ../analysis && python gen_data.py freq ' + docPath + ' 1 1', shell=True )
+        if os.path.exists( '../analysis/' + docPath[2:] ):
+            call( 'cd ../analysis && python gen_data.py norm '+ docPath + ' 24' , shell=True )
+            call( 'cd ../analysis && python gen_data.py freq ' + docPath + ' 20 40', shell=True )
 
-    clientRequests = ClientRequests.objects.filter(token=token)
-
-    if clientRequests:
-        clientRequest = clientRequests.values()[0]
-        clientRequest.update(previousRequestTime= -datetime.now().time)
 
     return
 
@@ -160,7 +157,7 @@ def getStatisticDataByToken( token ):
     if taxId is 0 or date is None:
         return {
             'status':'error',
-            'data':'receipt provided invalid'
+            'data':'receipt provided invalid or still processing'
         }
 
     t = threading.Thread( target=genCSVFiles(taxId, date,token), args=(), kwargs={} )
@@ -201,16 +198,14 @@ def checkAndUpdateClientRequestStatusByToken( token ):
         if clientRequests:
             clientRequest = clientRequests.values()[0]
 
-            if clientRequest['previousRequestTime'] < 0:
+            if clientRequest['previousRequestTime'] > 0:
                 return 1
 
             elif clientRequest['previousRequestTime'] == 0:
-                clientRequest.update(previousRequestTime=datetime.now().time())
+                clientRequests.update(previousRequestTime= int(time.time()))
+
                 return 0
 
-            elif clientRequest['previousRequestTime'] > 0 :
-                clientRequest.update(previousRequestTime=datetime.now().time())
-                return -1
         else:
             return -2
 
