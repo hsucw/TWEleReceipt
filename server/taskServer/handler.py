@@ -15,7 +15,7 @@ import traceback
 import sys
 
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 srvlog = logging.getLogger("SEVR")
 
 # send the task to client
@@ -106,13 +106,6 @@ def reportTask( request ):
         curReceipt = task['receipt']
         curTask = DB.getTaskObject(curReceipt,curDate)
 
-        try:
-            curTask.queued = False
-        except Exception, e:
-            srvlog.error("*_*_*_: No Such Current Task {} {} {}".format(curReceipt, curDate, direction))
-            srvlog.error(e)
-            return HttpResponse('no such record')
-
         nextDate = Helper.modifyDate(task['date'], 1*direction)
         nextReceipt = Helper.modifyReceiptNum(task['receipt'], direction*distance)
 
@@ -130,11 +123,13 @@ def reportTask( request ):
             nextTask = DB.createTaskObject(nextReceipt,curDate, direction)
             if nextTask:#fail_cnt = 0
                 nextTask.save()
+                srvlog.debug("create new Task {} {}".format(nextReceipt,curDate))
 
             if lastTask:
                 lastTask.fail_cnt = 5
                 lastTask.solved = True
                 lastTask.save()
+                srvlog.debug("close lastTask {}".format(lastTask.as_json()))
 
             if curTask:
                 if curTask.fail_cnt == 0:
@@ -145,6 +140,7 @@ def reportTask( request ):
                 curTask.succ = distance - len(fails)
                 curTask.todo = ','.join(fails)
                 curTask.save()
+                srvlog.debug("update curTask todo {}".format(curTask.as_json()))
 
         else:
             if curTask: #First fail
@@ -157,13 +153,27 @@ def reportTask( request ):
                 curTask.succ = distance - len(fails)
                 try:
                     curTask.save()
+                    srvlog.debug("move curTask to next date {}".format(curTask.as_json()))
                 except IntegrityError:
                     srvlog.warn("Task already exists")
+                    curTask.date = curDate
+                    curTask.solved = True
+                    curTask.save()
 
             if lastTask:
-                lastTask.date = nextDate
-                lastTask.fail_cnt=3
+                if lastTask.solved:
+                    lastTask.date = nextDate
+                    lastTask.fail_cnt=3
                 lastTask.save()
+                srvlog.debug("update lastTask to next date {}".format(curTask.as_json()))
+
+        try:
+            curTask.queued = False
+            srvlog.debug("update curTask {}".format(curTask.as_json()))
+        except Exception, e:
+            srvlog.error("*_*_*_: No Such Current Task {} {} {}".format(curReceipt, curDate, direction))
+            srvlog.error(e)
+            return HttpResponse('no such record')
 
         return HttpResponse('report recorded')
 

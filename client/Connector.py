@@ -9,7 +9,8 @@ import sys, traceback
 from ImgResolver import ImgResolver
 from HTMLDataResolver import HTMLDataResolver
 
-log.basicConfig(level=log.INFO)
+logging.basicConfig(level=logging.INFO)
+log = logging.getLogger(" ")
 
 def progress(count, total, suffix=''):
     bar_len = 60
@@ -84,7 +85,6 @@ class Connector(object):
 
         while True:
             try:
-                time.sleep(1)
                 self.res = self.conn.getresponse()
 
                 if self.res is not None:
@@ -102,7 +102,14 @@ class Connector(object):
                 self.conn = None
                 self.__initConnections__( path )
                 self.conn.request("GET", path, headers=self.headers)
+<<<<<<< HEAD
 
+=======
+                time.sleep(cnt*0.5)
+                #if cnt > 10:
+                #    log.error("Reaching Max Fail")
+                #    exit(1)
+>>>>>>> 90bcf2aa0ff0e53f4f5e7c36b11d79f27232af01
                 continue
 
 
@@ -145,7 +152,6 @@ class Connector(object):
             #    log.error("Max Redo Post")
             #    exit(1)
             try:
-                time.sleep(1)
                 self.res = self.conn.getresponse()
                 if  self.res :
                     break
@@ -168,6 +174,7 @@ class Connector(object):
                 params = urllib.urlencode(self.postData)
                 self.setReqHeader()
                 self.conn.request("POST", path, params, headers=self.headers)
+                time.sleep(cnt*0.5)
                 continue
 
         self.body = self.res.read()
@@ -219,8 +226,8 @@ class Connector(object):
 
 if __name__ == '__main__':
     """ give a guess for id & date"""
-    
-    log.setLevel(20)
+    logging.basicConfig(level=logging.DEBUG)
+    log.setLevel(logging.DEBUG)
     #log.basicConfig(level=log.INFO)
 
     if len(sys.argv) != 3:
@@ -243,7 +250,7 @@ if __name__ == '__main__':
         c.postForm(c.postPath)
         log.info('[{} {}]Post data'.format(c.res.status, c.res.reason))
         res = c.getInfo()
-
+        log.info('res: {}'.format(res))
         #with open("out.html", "w") as outFd:
         #    outFd.write(c.body)
 

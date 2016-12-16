@@ -152,12 +152,9 @@ def getStatisticDataByToken( token ):
 
     taxId, date = getTaxIdAndDateByToken( token )
 
-    if status > 0:
-        return {
-            'status': 'success',
-            'data' : getCsvFileNamesByTokenAndDate( token , date ),
-            'taxId' : taxId
-        }
+    csvFiles = getCsvFileNamesByTokenAndDate( token , date )
+
+
 
 
     if taxId is 0 or date is None:
@@ -169,6 +166,13 @@ def getStatisticDataByToken( token ):
     t = threading.Thread( target=genCSVFiles(taxId, date,token), args=(), kwargs={} )
     t.setDaemon( True )
     t.start()
+
+    if status > 0:
+        return {
+            'status': 'success',
+            'data' : csvFiles,
+            'taxId' : taxId
+        }
 
     return {
         'status':'pending',
