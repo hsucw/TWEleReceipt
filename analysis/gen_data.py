@@ -51,9 +51,9 @@ def genFreqRatio(fname, unit, num):
 
 
 def printUsage():
-    print "usage: python gen_data.py [freq|norm] [options]"
-    print " for norm, args: [filename] [interval]"
-    print " for freq, args: [filename] [unit_money] [num_units]"
+    print("usage: python gen_data.py [freq|norm] [options]")
+    print(" for norm, args: [filename] [interval]")
+    print(" for freq, args: [filename] [unit_money] [num_units]")
 
 if __name__ == '__main__':
     if len(sys.argv) < 3:
@@ -65,4 +65,3 @@ if __name__ == '__main__':
         genFreqRatio(sys.argv[2],int(sys.argv[3]), int(sys.argv[4]))
     else:
         printUsage()
-
