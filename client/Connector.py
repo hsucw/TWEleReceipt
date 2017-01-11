@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 import httplib
 import urllib
-import logging as log
-import sys 
+import logging
+import sys
 import time
 import sys, traceback
 
@@ -102,14 +102,10 @@ class Connector(object):
                 self.conn = None
                 self.__initConnections__( path )
                 self.conn.request("GET", path, headers=self.headers)
-<<<<<<< HEAD
-
-=======
                 time.sleep(cnt*0.5)
                 #if cnt > 10:
                 #    log.error("Reaching Max Fail")
                 #    exit(1)
->>>>>>> 90bcf2aa0ff0e53f4f5e7c36b11d79f27232af01
                 continue
 
 
