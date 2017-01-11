@@ -8,7 +8,7 @@
 ########################################################
 import httplib
 import urllib
-import logging as log
+import logging
 import sys
 import time
 import sys, traceback
