@@ -1,4 +1,11 @@
 #!/usr/local/bin/python
+########################################################
+##  TWEleReceipt: A web client
+##  This program is only for hacker college. All the
+##  rights are preserved. You can use it on the class.
+##  The program cannot be distributed, copied, or modified
+##  Written by Chia-Wei Hsu
+########################################################
 import os
 import logging as log
 import time
@@ -9,10 +16,11 @@ import re
 import random
 from PIL import Image, ImageEnhance
 
-
-
+##
+## Img resolve class:
+## we can use it for cracking CAPTCHA image
+##
 class ImgResolver(object):
-
     def __init__(self):
         self.guess_total = 0
         self.guess_hit = 0
@@ -22,7 +30,6 @@ class ImgResolver(object):
 
     def loadPics(self):
         content = None
-
         if self.check is None:
             self.check = self.basicCheck
 
@@ -54,15 +61,11 @@ class ImgResolver(object):
         else:
             pass
         # use tesseract
-
         imgCode = os.popen("tesseract -l eng -psm 8 {} stdout 2>/dev/null"\
                 .format(self.tmp_file)).readline()[0:-1]
         log.debug("Guess Ratio:{}/{}={}%".format(self.guess_hit+1, self.guess_total, \
                 ((self.guess_hit+1)*100/(self.guess_total))))
-
         os.remove( self.tmp_file )
-
-
         return imgCode
 
     def basicCheck(self, imgCode):
